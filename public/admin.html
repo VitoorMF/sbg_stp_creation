@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>Admin — Startup Creation</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 700px; margin: 40px auto; background: #0f172a; color: #f1f5f9; padding: 16px; }
+  button { padding: 12px 20px; font-size: 15px; margin-right: 8px; margin-bottom: 8px; border-radius: 8px; border: none; background: #ff6a00; color: white; font-weight: bold; cursor: pointer; }
+  button:disabled { background: #475569; cursor: not-allowed; }
+  #log { background: #1e293b; padding: 12px; border-radius: 8px; height: 200px; overflow-y: auto; font-size: 13px; font-family: monospace; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  td, th { padding: 6px 8px; border-bottom: 1px solid #334155; text-align: left; }
+  input { padding: 10px; font-size: 15px; border-radius: 6px; border: none; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+  <h1>🎛 Admin — Startup Creation</h1>
+
+  <div id="auth-box">
+    <input id="password" type="password" placeholder="Senha de admin" />
+    <button id="auth-btn">Entrar</button>
+  </div>
+
+  <div id="controls" style="display:none;">
+    <p>Rodada atual: <strong id="current-round">—</strong></p>
+    <button id="next-round-btn">Próxima rodada</button>
+    <button id="close-round-btn">Fechar rodada agora</button>
+    <button id="resolve-delayed-btn" style="display:none;">Revelar resultado atrasado</button>
+    <p id="answer-count"></p>
+
+    <h3>Placar</h3>
+    <table>
+      <thead><tr><th>Time</th><th>Valuation</th></tr></thead>
+      <tbody id="ranking-body"></tbody>
+    </table>
+
+    <h3>Log</h3>
+    <div id="log"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let pendingDelayedRoundId = null;
+
+    function log(msg) {
+      const div = document.getElementById('log');
+      div.innerHTML += '<div>' + new Date().toLocaleTimeString() + ' — ' + msg + '</div>';
+      div.scrollTop = div.scrollHeight;
+    }
+
+    document.getElementById('auth-btn').onclick = () => {
+      const password = document.getElementById('password').value;
+      socket.emit('admin:auth', { password }, (res) => {
+        if (!res.ok) { log('Senha incorreta.'); return; }
+        document.getElementById('auth-box').style.display = 'none';
+        document.getElementById('controls').style.display = 'block';
+        log('Autenticado como admin.');
+        renderRanking(res.state.teams);
+      });
+    };
+
+    document.getElementById('next-round-btn').onclick = () => {
+      socket.emit('admin:startNextRound', {}, (res) => {
+        if (res.finished) { log('Jogo encerrado.'); return; }
+        if (!res.ok) { log('Erro: ' + res.reason); return; }
+        document.getElementById('current-round').textContent = res.round.title;
+        document.getElementById('resolve-delayed-btn').style.display = 'none';
+        log('Rodada iniciada: ' + res.round.title);
+      });
+    };
+
+    document.getElementById('close-round-btn').onclick = () => {
+      socket.emit('admin:closeRoundNow', {}, () => log('Rodada fechada manualmente.'));
+    };
+
+    document.getElementById('resolve-delayed-btn').onclick = () => {
+      if (!pendingDelayedRoundId) return;
+      socket.emit('admin:resolveDelayed', { roundId: pendingDelayedRoundId }, (res) => {
+        if (res.ok) log('Revelação atrasada disparada para rodada ' + pendingDelayedRoundId);
+      });
+    };
+
+    socket.on('round:answer_count', ({ count, total }) => {
+      document.getElementById('answer-count').textContent = `Respostas: ${count}/${total}`;
+    });
+
+    socket.on('round:revealed', ({ roundId, correct, ranking }) => {
+      log(`Rodada ${roundId} revelada. Opção certa: ${correct}`);
+      renderRanking(ranking);
+    });
+
+    socket.on('round:closed_pending', ({ roundId }) => {
+      log(`Rodada ${roundId} fechada (revelação atrasada pendente).`);
+      pendingDelayedRoundId = roundId;
+      document.getElementById('resolve-delayed-btn').style.display = 'inline-block';
+    });
+
+    socket.on('round:delayed_revealed', ({ roundId, ranking }) => {
+      log(`Revelação atrasada da rodada ${roundId} aplicada.`);
+      document.getElementById('resolve-delayed-btn').style.display = 'none';
+      renderRanking(ranking);
+    });
+
+    socket.on('game:finished', ({ ranking }) => {
+      log('Jogo finalizado!');
+      renderRanking(ranking);
+    });
+
+    function renderRanking(list) {
+      const body = document.getElementById('ranking-body');
+      body.innerHTML = '';
+      list.forEach((t) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${t.name}</td><td>R$ ${t.valuation.toLocaleString('pt-BR')}</td>`;
+        body.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>

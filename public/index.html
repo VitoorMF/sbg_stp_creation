@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bora.ai — Startup Creation</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 16px; background: #0f172a; color: #f1f5f9; }
+  h1 { font-size: 20px; }
+  input { width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: none; margin-bottom: 8px; box-sizing: border-box; }
+  button { width: 100%; padding: 14px; font-size: 16px; border-radius: 8px; border: none; background: #ff6a00; color: white; font-weight: bold; }
+  button:disabled { background: #475569; }
+  .option { display: block; width: 100%; text-align: left; padding: 14px; margin-bottom: 10px; border-radius: 8px; border: 2px solid #334155; background: #1e293b; color: #f1f5f9; font-size: 15px; }
+  .option.selected { border-color: #ff6a00; background: #3b2412; }
+  #scenario { background: #1e293b; padding: 14px; border-radius: 8px; margin-bottom: 14px; }
+  #timer { font-size: 28px; font-weight: bold; text-align: center; margin-bottom: 12px; }
+  #valuation { font-size: 18px; text-align: center; margin-bottom: 8px; color: #4ade80; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+  <h1>🚀 Bora.ai — Startup Creation</h1>
+
+  <div id="join-screen">
+    <p>Nome do time:</p>
+    <input id="team-name" placeholder="Ex: Os Escaláveis" maxlength="30" />
+    <button id="join-btn">Entrar</button>
+    <p id="join-error" style="color:#f87171;"></p>
+  </div>
+
+  <div id="game-screen" class="hidden">
+    <div id="valuation">Valuation: R$ --</div>
+    <div id="timer">--</div>
+    <div id="scenario">
+      <strong id="round-title"></strong>
+      <p id="narration"></p>
+      <p id="scenario-text"></p>
+    </div>
+    <div id="options"></div>
+    <p id="status"></p>
+  </div>
+
+  <div id="waiting-screen" class="hidden">
+    <p>Aguardando a próxima rodada...</p>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let myOptionChosen = null;
+    let roundEndsAt = null;
+    let timerInterval = null;
+
+    const joinScreen = document.getElementById('join-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const waitingScreen = document.getElementById('waiting-screen');
+
+    document.getElementById('join-btn').onclick = () => {
+      const name = document.getElementById('team-name').value.trim();
+      if (!name) return;
+      socket.emit('team:join', { name }, (res) => {
+        if (!res.ok) {
+          document.getElementById('join-error').textContent =
+            res.reason === 'name_taken' ? 'Esse nome já existe, escolha outro.' : 'Erro ao entrar.';
+          return;
+        }
+        joinScreen.classList.add('hidden');
+        waitingScreen.classList.remove('hidden');
+      });
+    };
+
+    socket.on('round:started', ({ round, durationMs, serverStartedAt }) => {
+      myOptionChosen = null;
+      waitingScreen.classList.add('hidden');
+      gameScreen.classList.remove('hidden');
+      document.getElementById('round-title').textContent = round.title;
+      document.getElementById('narration').textContent = round.narration;
+      document.getElementById('scenario-text').textContent = round.scenario;
+      document.getElementById('status').textContent = '';
+
+      const optionsDiv = document.getElementById('options');
+      optionsDiv.innerHTML = '';
+      round.options.forEach((opt) => {
+        const btn = document.createElement('button');
+        btn.className = 'option';
+        btn.textContent = opt.label;
+        btn.onclick = () => chooseOption(opt.id, btn);
+        optionsDiv.appendChild(btn);
+      });
+
+      roundEndsAt = serverStartedAt + durationMs;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(updateTimer, 200);
+      updateTimer();
+    });
+
+    function updateTimer() {
+      const msLeft = Math.max(0, roundEndsAt - Date.now());
+      document.getElementById('timer').textContent = Math.ceil(msLeft / 1000) + 's';
+      if (msLeft <= 0) clearInterval(timerInterval);
+    }
+
+    function chooseOption(optionId, btnEl) {
+      if (myOptionChosen) return; // já respondeu
+      myOptionChosen = optionId;
+      document.querySelectorAll('.option').forEach((b) => b.classList.remove('selected'));
+      btnEl.classList.add('selected');
+      socket.emit('team:answer', { optionId }, (res) => {
+        document.getElementById('status').textContent = res.ok
+          ? 'Resposta registrada! Aguardando o resultado...'
+          : 'Não foi possível registrar (' + res.reason + ')';
+      });
+    }
+
+    socket.on('round:revealed', ({ ranking }) => {
+      gameScreen.classList.add('hidden');
+      waitingScreen.classList.remove('hidden');
+      waitingScreen.innerHTML = '<p>Rodada encerrada! Olha o placar no telão. ⏳</p>';
+      updateMyValuation(ranking);
+    });
+
+    socket.on('round:closed_pending', () => {
+      document.getElementById('status').textContent = 'Resposta registrada. O resultado vem mais tarde...';
+    });
+
+    socket.on('round:delayed_revealed', ({ ranking }) => {
+      updateMyValuation(ranking);
+    });
+
+    function updateMyValuation(ranking) {
+      // Essa tela não sabe o próprio teamId de forma amigável no protótipo;
+      // no ranking completo dá pra achar pelo nome digitado. Suficiente pro teste.
+      const name = document.getElementById('team-name').value.trim();
+      const mine = ranking.find((t) => t.name === name);
+      if (mine) {
+        document.getElementById('valuation').textContent =
+          'Valuation: R$ ' + mine.valuation.toLocaleString('pt-BR');
+      }
+    }
+
+    socket.on('game:finished', ({ ranking }) => {
+      waitingScreen.classList.remove('hidden');
+      gameScreen.classList.add('hidden');
+      updateMyValuation(ranking);
+      waitingScreen.innerHTML = '<p>Jogo encerrado! Confira o resultado no telão.</p>';
+    });
+  </script>
+</body>
+</html>

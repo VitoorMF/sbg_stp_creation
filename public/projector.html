@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>Bora.ai — Placar</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #0f172a; color: #f1f5f9; margin: 0; padding: 40px; text-align: center; }
+  h1 { font-size: 48px; margin-bottom: 0; }
+  #timer { font-size: 72px; font-weight: bold; color: #ff6a00; margin: 20px 0; }
+  #scenario { font-size: 28px; max-width: 900px; margin: 0 auto 30px; }
+  table { margin: 0 auto; border-collapse: collapse; font-size: 28px; }
+  td, th { padding: 12px 24px; border-bottom: 1px solid #334155; }
+  .rank-1 { color: #fbbf24; font-weight: bold; }
+  #hidden-ranking { font-size: 32px; color: #94a3b8; margin-top: 40px; }
+</style>
+</head>
+<body>
+  <h1 id="round-title">🚀 Bora.ai — Startup Creation</h1>
+  <div id="timer"></div>
+  <div id="scenario"></div>
+  <table>
+    <thead><tr><th>Time</th><th>Valuation</th></tr></thead>
+    <tbody id="ranking-body"></tbody>
+  </table>
+  <div id="hidden-ranking" class="hidden" style="display:none;">Ranking em suspense até o final...</div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let roundEndsAt = null;
+    let timerInterval = null;
+    // Esconde o ranking nas rodadas 7, 8 e 9, como combinado na documentação.
+    const HIDE_RANKING_FROM_ROUND = 7;
+
+    socket.on('round:started', ({ round, durationMs, serverStartedAt }) => {
+      document.getElementById('round-title').textContent = round.title;
+      document.getElementById('scenario').textContent = round.scenario;
+      roundEndsAt = serverStartedAt + durationMs;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(updateTimer, 200);
+      updateTimer();
+      toggleRankingVisibility(round.id);
+    });
+
+    function updateTimer() {
+      const msLeft = Math.max(0, roundEndsAt - Date.now());
+      document.getElementById('timer').textContent = Math.ceil(msLeft / 1000) + 's';
+      if (msLeft <= 0) clearInterval(timerInterval);
+    }
+
+    socket.on('ranking:update', (ranking) => renderRanking(ranking));
+    socket.on('round:revealed', ({ ranking }) => renderRanking(ranking));
+    socket.on('round:delayed_revealed', ({ narration, ranking }) => {
+      document.getElementById('scenario').textContent = narration;
+      renderRanking(ranking);
+    });
+    socket.on('game:finished', ({ ranking }) => {
+      document.getElementById('round-title').textContent = '🏆 Resultado final';
+      document.getElementById('timer').textContent = '';
+      renderRanking(ranking, true);
+    });
+
+    function toggleRankingVisibility(roundId) {
+      const hide = roundId >= HIDE_RANKING_FROM_ROUND;
+      document.querySelector('table').style.display = hide ? 'none' : 'table';
+      document.getElementById('hidden-ranking').style.display = hide ? 'block' : 'none';
+    }
+
+    function renderRanking(list, forceShow) {
+      if (forceShow) {
+        document.querySelector('table').style.display = 'table';
+        document.getElementById('hidden-ranking').style.display = 'none';
+      }
+      const body = document.getElementById('ranking-body');
+      body.innerHTML = '';
+      list.forEach((t, i) => {
+        const tr = document.createElement('tr');
+        if (i === 0) tr.className = 'rank-1';
+        tr.innerHTML = `<td>${t.name}</td><td>R$ ${t.valuation.toLocaleString('pt-BR')}</td>`;
+        body.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>
