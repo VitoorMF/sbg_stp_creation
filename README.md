@@ -1,53 +1,108 @@
-# Startup Creation — protótipo
+# Startup Creation
 
-Protótipo da engine do jogo (3 rodadas de exemplo: 1, 2 e 6, a mais complexa).
-Mesma lógica das outras 6 rodadas, só falta escrever o conteúdo em `rounds.js`.
+Jogo de 9 rodadas em que times decidem a arquitetura da Bora.ai (venda de ingressos para shows e festivais). Cada escolha multiplica o valuation do time, e o maior valuation no final ganha. Cada time joga com um celular, no estilo Kahoot.
 
-## Rodar localmente ou na EC2
+## Rodar
 
 ```bash
 npm install
-node server.js
+npm start
 ```
 
-Por padrão sobe na porta **3002** (troque com `PORT=3003 node server.js` se precisar).
-Na EC2, libere essa porta no security group, igual você já fez com o King of the Server.
+O servidor sobe na porta **3002** (`PORT=3003 npm start` para trocar) e imprime os três endereços e a senha do admin:
 
-## Telas
+| Tela | Endereço | Quem usa |
+| --- | --- | --- |
+| Time | `http://<ip>:3002/` | um celular por time, aberto pelo QR code |
+| Telão | `http://<ip>:3002/telao` | projetor (tecla **F** para tela cheia) |
+| Operador | `http://<ip>:3002/admin` | quem controla o jogo. **Não projete esta tela**: ela mostra as respostas |
 
-- **Time (celular):** `http://<ip>:3002/` — nome do time, depois responde cada rodada
-- **Admin (você controla):** `http://<ip>:3002/admin.html` — senha padrão `bora-admin`
-  (troque em `ADMIN_PASSWORD` no `server.js` ou via variável de ambiente antes do evento)
-- **Projetor:** `http://<ip>:3002/projector.html` — cenário, timer e ranking
+**Senha do admin:** use `ADMIN_PASSWORD=...`. Sem a variável, o servidor gera uma senha, grava em `data/admin-password.txt` e imprime no terminal. A mesma senha vale depois de um reinício.
 
-## Como testar sozinho, sem o evento
-
-1. `node server.js`
-2. Abra `admin.html` numa aba, autentique
-3. Abra `index.html` em 2-3 abas (ou celulares), entre com nomes diferentes
-4. Abra `projector.html` numa terceira aba
-5. No admin, clique "Próxima rodada" e responda nos times
-6. Deixe o timer zerar (ou clique "Fechar rodada agora")
-7. Observe: rodadas 1 e 2 revelam na hora; a rodada 6 (delayed) só mostra
-   "resultado pendente" até você clicar "Revelar resultado atrasado" no admin
-
-## O que falta
-
-- [ ] Escrever as rodadas 3, 4, 5, 7, 8 e 9 em `rounds.js`, no mesmo formato
-- [ ] Rodada 9 (aposta): a engine ainda não tem a mecânica de aposta — avisar
-      quando for implementar, porque muda `submitAnswer` e `closeRound`
-- [ ] Eventos aleatórios (investidor anjo, bug em produção etc) — ainda não
-      implementados na engine, por simplicidade no protótipo
-- [ ] Trocar `ADMIN_PASSWORD` antes do evento
-- [ ] Testar carga real na t3.small com ~20-25 conexões simultâneas
-- [ ] Gerar QR code apontando para o IP/porta corretos no dia
-
-## Teste rápido da engine (sem subir servidor)
+## Ensaiar sozinho
 
 ```bash
-node test-engine.js
+npm start
+npm run bots -- 15
 ```
 
-Simula 3 times (sempre acerta / sempre mediano / sempre erra) jogando as
-3 rodadas, incluindo a revelação atrasada da rodada 6, e imprime o resultado
-final de cada um.
+O segundo comando entra com 15 times-robô que apostam e respondem sozinhos (alguns não respondem). Abra o telão e o admin, entre com o seu celular e jogue a partida inteira. Para ver o placar de novo do zero, use "Zerar placar e manter times" no admin.
+
+## Como o operador conduz
+
+O admin tem um botão principal que muda de nome conforme a fase. Um clique duplo nunca pula uma etapa.
+
+1. **Começar rodada N:** abre a pergunta nos celulares e o timer no telão (60 s nas rodadas 1 a 3, 75 s nas demais).
+2. O timer encerra as respostas sozinho. **Encerrar respostas agora** antecipa o fim, e **+15 s** dá mais tempo.
+3. **Revelar a resposta:** mostra a melhor opção, a explicação, quantos times escolheram cada opção, o evento sorteado e o ranking.
+4. Na **rodada 6**, o botão vira **Revelar a crise** (a queda da AZ aparece no telão sem placar) e depois **Mostrar o resultado**.
+5. Na **rodada 9**, os times apostam 25%, 50%, 75% ou 100% do valuation antes de ver a pergunta. A pergunta abre sozinha quando o prazo da aposta (30 s) acaba.
+6. **Mostrar resultado final:** o telão revela a classificação de baixo para cima e o vencedor por último.
+
+O painel "Roteiro" do admin traz a narração, o cenário, as três opções com a faixa e o multiplicador de cada uma, a explicação e as notas do apresentador (o detalhe do cenário que desempata as opções).
+
+O admin também pode **renomear** ou **remover** times. Um time removido volta para a tela de entrada no celular.
+
+## Regras implementadas
+
+- Valuation inicial de R$ 100 mil. Os multiplicadores por dificuldade e as faixas finais seguem o documento de design (`config.js`).
+- **Sem resposta** conta como a pior opção.
+- **Bônus de velocidade:** +10% para quem confirma a resposta nos primeiros 25 s.
+- **Evento aleatório:** um por rodada, da 1 à 8, sorteado para um time.
+- **Ranking:** some do telão e dos celulares nas rodadas 7 a 9 e volta no resultado final. O celular sempre mostra o valuation do próprio time.
+- **Fênix:** time que caiu abaixo de R$ 50 mil em algum momento e terminou com R$ 300 mil ou mais.
+- **Anticola:** a ordem das opções é embaralhada por time e fica a mesma se o celular recarregar.
+- **Pontuação** calculada só no servidor. Nada sobre a resposta certa sai do servidor antes da revelação.
+
+### Decisões em pontos que o documento deixou em aberto
+
+Todas podem ser trocadas em `config.js`:
+
+- O bônus de velocidade vale **só para a melhor opção** (`SPEED_BONUS_ONLY_BEST`), para não premiar chute rápido. Não há bônus na aposta.
+- Na aposta, a **opção mediana perde metade** do valor apostado (`STAKE_RETURN.mid`). O documento deixou essa célula vazia.
+- Time que **não aposta** a tempo aposta 50% (`DEFAULT_BET_FRACTION`).
+- **Desempate** no valuation: vence quem respondeu mais rápido somando todas as rodadas.
+- **Times que entram atrasados** começam com R$ 100 mil. Se entram depois que a rodada fechou, essa rodada não conta para eles.
+- O texto do prêmio no telão (`PRIZE_TEXT`) diz "Ganhou os AWS Credits!". Troque se os créditos não forem confirmados.
+
+## Ajustar o jogo
+
+- **Números** (multiplicadores, tempos, eventos, faixas, prêmio): `config.js`.
+- **Texto das rodadas:** `rounds.js`. O servidor confere o formato ao subir e recusa uma rodada sem as três faixas ou sem feedback.
+- **Calibrar depois do teste:** `npm run simulate` joga milhares de partidas com a engine de verdade e mostra o valuation de cada estratégia e a distribuição de faixas para um time que acerta cerca de dois terços.
+
+## Deploy na EC2
+
+Cabe na t3.small do King of the Server. A carga é de cerca de 25 conexões.
+
+```bash
+# na instância, com Node 18 ou mais novo
+git clone <repo> startup-creation && cd startup-creation
+npm ci
+npm test
+sudo npm install -g pm2
+ADMIN_PASSWORD='troque-isto' pm2 start ecosystem.config.js
+pm2 save && pm2 startup   # volta sozinho se a instância reiniciar
+```
+
+- **Security group:** liberar a porta 3002 (TCP) para `0.0.0.0/0`.
+- **IP:** use um Elastic IP. Sem ele, o QR code do telão usa o endereço que você digitou para abrir o telão, então abra pelo IP público do dia. Para fixar o endereço, use `PUBLIC_URL=http://<ip>:3002`.
+- **Queda do processo:** o pm2 reinicia sozinho. O estado é gravado em `data/state.json` a cada mudança (inclusive a cada resposta) e volta no reinício, e os celulares reconectam ao mesmo time sozinhos.
+- **Jogo novo:** "Apagar tudo" no admin, ou pare o processo e apague `data/state.json`.
+
+## Checklist antes do evento
+
+- [ ] `ADMIN_PASSWORD` definido e anotado com o operador
+- [ ] Instância rodando desde antes da aula, `curl http://<ip>:3002/healthz` respondendo
+- [ ] Telão aberto pelo IP público e QR code testado com um celular no 4G e um no Wi-Fi da sala
+- [ ] Ensaio completo com `npm run bots -- 25`, depois "Apagar tudo"
+- [ ] Teste com alguém de fora do core team, e depois rodar `npm run simulate` para ajustar `config.js`
+- [ ] Plano B: placar manual (planilha) se a instância cair de vez
+
+## Testes
+
+```bash
+npm test
+```
+
+São 36 testes. Cobrem a engine (pontuação, bônus, aposta, crise, eventos, faixas, ranking escondido, nada vazando antes da revelação, persistência) e o servidor por socket (entrada, reconexão, clique duplo, timer, remoção de time, payload malformado, reinício com estado salvo).

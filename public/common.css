@@ -1,0 +1,132 @@
+:root {
+  --bg: #0b1020;
+  --bg-2: #121a30;
+  --card: #18223d;
+  --card-2: #1f2b4b;
+  --line: #2a3760;
+  --text: #eef2fb;
+  --muted: #9aa7c7;
+  --accent: #ff9900;
+  --accent-ink: #1a1203;
+  --best: #22c55e;
+  --best-bg: rgba(34, 197, 94, 0.14);
+  --mid: #eab308;
+  --mid-bg: rgba(234, 179, 8, 0.14);
+  --worst: #ef4444;
+  --worst-bg: rgba(239, 68, 68, 0.14);
+  --info: #60a5fa;
+  --radius: 14px;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.4;
+  -webkit-text-size-adjust: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: 16px;
+  transition: transform 0.06s ease, filter 0.15s ease;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  background: #3a4566;
+  color: #8390b3;
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.btn.danger {
+  background: transparent;
+  color: var(--worst);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.tier-best {
+  --tier: var(--best);
+  --tier-bg: var(--best-bg);
+}
+
+.tier-mid {
+  --tier: var(--mid);
+  --tier-bg: var(--mid-bg);
+}
+
+.tier-worst {
+  --tier: var(--worst);
+  --tier-bg: var(--worst-bg);
+}
+
+.conn-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 8px 12px;
+  background: var(--worst);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  transform: translateY(-100%);
+  transition: transform 0.2s ease;
+}
+
+.conn-banner.show {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

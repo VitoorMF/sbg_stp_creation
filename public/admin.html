@@ -2,119 +2,653 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
-<title>Admin — Startup Creation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Operador · Startup Creation</title>
+<link rel="stylesheet" href="/common.css" />
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 700px; margin: 40px auto; background: #0f172a; color: #f1f5f9; padding: 16px; }
-  button { padding: 12px 20px; font-size: 15px; margin-right: 8px; margin-bottom: 8px; border-radius: 8px; border: none; background: #ff6a00; color: white; font-weight: bold; cursor: pointer; }
-  button:disabled { background: #475569; cursor: not-allowed; }
-  #log { background: #1e293b; padding: 12px; border-radius: 8px; height: 200px; overflow-y: auto; font-size: 13px; font-family: monospace; }
-  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-  td, th { padding: 6px 8px; border-bottom: 1px solid #334155; text-align: left; }
-  input { padding: 10px; font-size: 15px; border-radius: 6px; border: none; margin-bottom: 10px; }
+  body {
+    font-size: 15px;
+  }
+
+  .wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+
+  h1 {
+    font-size: 20px;
+    margin: 0;
+  }
+
+  h2 {
+    font-size: 15px;
+    margin: 0 0 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .login {
+    max-width: 360px;
+    margin: 12vh auto 0;
+  }
+
+  .login input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 2px solid var(--line);
+    background: var(--bg-2);
+    color: var(--text);
+    margin: 12px 0;
+  }
+
+  .error {
+    color: var(--worst);
+    font-weight: 600;
+    min-height: 1.3em;
+    margin: 8px 0 0;
+  }
+
+  .control {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+    padding: 14px 16px;
+    margin: 14px 0 16px;
+    background: rgba(18, 26, 48, 0.96);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    backdrop-filter: blur(6px);
+  }
+
+  .status {
+    flex: 1;
+    min-width: 240px;
+  }
+
+  .status .phase {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+  }
+
+  .status .what {
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .status .sub {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .clock {
+    font-size: 34px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    min-width: 3ch;
+    text-align: right;
+    color: var(--accent);
+  }
+
+  .clock.low {
+    color: var(--worst);
+  }
+
+  #primary {
+    font-size: 17px;
+    padding: 16px 22px;
+    min-width: 260px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  @media (max-width: 900px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .stack > * + * {
+    margin-top: 16px;
+  }
+
+  .script p {
+    margin: 0 0 10px;
+  }
+
+  .script .k {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 14px 0 4px;
+  }
+
+  .notes {
+    background: rgba(255, 153, 0, 0.1);
+    border-left: 4px solid var(--accent);
+    padding: 10px 12px;
+    border-radius: 0 10px 10px 0;
+  }
+
+  .aopt {
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--tier);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background: var(--bg-2);
+  }
+
+  .aopt .top {
+    display: flex;
+    gap: 10px;
+    font-weight: 700;
+  }
+
+  .aopt .top .m {
+    margin-left: auto;
+    color: var(--tier);
+    white-space: nowrap;
+  }
+
+  .aopt .t {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  th,
+  td {
+    text-align: left;
+    padding: 8px 6px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+  }
+
+  th {
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  td.num {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--worst);
+    margin-right: 6px;
+  }
+
+  .dot.on {
+    background: var(--best);
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--tier-bg, var(--card-2));
+    color: var(--tier, var(--muted));
+    white-space: nowrap;
+  }
+
+  .mini {
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+
+  .log {
+    max-height: 260px;
+    overflow-y: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+
+  .log div {
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(42, 55, 96, 0.5);
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    font-size: 14px;
+  }
+
+  .links a {
+    color: var(--info);
+  }
+
+  .danger-zone {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    background: var(--worst);
+    color: white;
+    font-weight: 700;
+    padding: 10px 16px;
+    border-radius: 10px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+
+  .toast.show {
+    opacity: 1;
+  }
 </style>
 </head>
 <body>
-  <h1>🎛 Admin — Startup Creation</h1>
+  <div id="conn" class="conn-banner">Sem conexão com o servidor. Reconectando…</div>
 
-  <div id="auth-box">
-    <input id="password" type="password" placeholder="Senha de admin" />
-    <button id="auth-btn">Entrar</button>
+  <section id="login" class="login card" hidden>
+    <h1>🎛️ Operador</h1>
+    <form id="login-form">
+      <input id="password" type="password" placeholder="Senha do admin" autocomplete="current-password" />
+      <button class="btn" style="width:100%" type="submit">Entrar</button>
+      <p id="login-error" class="error"></p>
+    </form>
+    <p class="muted" style="font-size:13px;margin:0">A senha aparece no terminal quando o servidor sobe.</p>
+  </section>
+
+  <div id="panel" class="wrap" hidden>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <h1>🎛️ Startup Creation · Operador</h1>
+      <div class="links" style="margin-left:auto">
+        <a href="/telao" target="_blank" rel="noopener">Abrir telão ↗</a>
+        <span class="muted">Entrada dos times: <b id="join-url"></b></span>
+      </div>
+    </div>
+
+    <div class="control">
+      <div class="status">
+        <div id="st-phase" class="phase"></div>
+        <div id="st-what" class="what"></div>
+        <div id="st-sub" class="sub"></div>
+      </div>
+      <div id="clock" class="clock"></div>
+      <button id="extend" class="btn ghost" type="button" hidden>+15 s</button>
+      <button id="primary" class="btn" type="button"></button>
+    </div>
+
+    <div class="grid">
+      <div class="stack">
+        <section class="card script" id="script"></section>
+      </div>
+      <div class="stack">
+        <section class="card">
+          <h2 id="teams-title">Times</h2>
+          <div style="overflow-x:auto"><table><thead id="teams-head"></thead><tbody id="teams-body"></tbody></table></div>
+        </section>
+        <section class="card">
+          <h2>Registro</h2>
+          <div id="log" class="log"></div>
+        </section>
+        <section class="card">
+          <h2>Reiniciar</h2>
+          <p class="muted" style="margin-top:0;font-size:14px">Use depois do ensaio. Não dá para desfazer.</p>
+          <div class="danger-zone">
+            <button id="reset-keep" class="btn danger" type="button">Zerar placar e manter times</button>
+            <button id="reset-all" class="btn danger" type="button">Apagar tudo</button>
+          </div>
+        </section>
+      </div>
+    </div>
   </div>
-
-  <div id="controls" style="display:none;">
-    <p>Rodada atual: <strong id="current-round">—</strong></p>
-    <button id="next-round-btn">Próxima rodada</button>
-    <button id="close-round-btn">Fechar rodada agora</button>
-    <button id="resolve-delayed-btn" style="display:none;">Revelar resultado atrasado</button>
-    <p id="answer-count"></p>
-
-    <h3>Placar</h3>
-    <table>
-      <thead><tr><th>Time</th><th>Valuation</th></tr></thead>
-      <tbody id="ranking-body"></tbody>
-    </table>
-
-    <h3>Log</h3>
-    <div id="log"></div>
-  </div>
+  <div id="toast" class="toast"></div>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/common.js"></script>
   <script>
-    const socket = io();
-    let pendingDelayedRoundId = null;
+    const { el, fmtBRL, fmtShort, fmtMult, fmtPct, Countdown, reasonText, request } = window.Bora;
+    const PASS_KEY = 'bora.adminPass';
+    const PHASE_LABEL = {
+      lobby: 'Entrada dos times',
+      bet: 'Apostas abertas',
+      question: 'Times respondendo',
+      closed: 'Respostas encerradas',
+      twist: 'Crise na tela',
+      reveal: 'Resposta revelada',
+      final: 'Resultado final',
+    };
+    const TIER_LABEL = { best: 'Melhor', mid: 'Mediana', worst: 'Pior' };
 
-    function log(msg) {
-      const div = document.getElementById('log');
-      div.innerHTML += '<div>' + new Date().toLocaleTimeString() + ' — ' + msg + '</div>';
-      div.scrollTop = div.scrollHeight;
+    const socket = io({ reconnectionDelayMax: 3000 });
+    let view = null;
+    let busy = false;
+    let scriptSig = '';
+    let teamsSig = '';
+    let logSig = '';
+
+    function getPass() {
+      try {
+        return sessionStorage.getItem(PASS_KEY);
+      } catch {
+        return null;
+      }
+    }
+    function setPass(p) {
+      try {
+        if (p) sessionStorage.setItem(PASS_KEY, p);
+        else sessionStorage.removeItem(PASS_KEY);
+      } catch {
+        // sem sessionStorage: pede a senha de novo ao reconectar
+      }
     }
 
-    document.getElementById('auth-btn').onclick = () => {
-      const password = document.getElementById('password').value;
-      socket.emit('admin:auth', { password }, (res) => {
-        if (!res.ok) { log('Senha incorreta.'); return; }
-        document.getElementById('auth-box').style.display = 'none';
-        document.getElementById('controls').style.display = 'block';
-        log('Autenticado como admin.');
-        renderRanking(res.state.teams);
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toast.h);
+      toast.h = setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    async function auth(password) {
+      const res = await request(socket, 'admin:auth', { password });
+      if (res.ok) {
+        setPass(password);
+        document.getElementById('login').hidden = true;
+        document.getElementById('panel').hidden = false;
+      } else {
+        setPass(null);
+        showLogin(reasonText(res.reason));
+      }
+    }
+
+    function showLogin(msg) {
+      document.getElementById('panel').hidden = true;
+      document.getElementById('login').hidden = false;
+      document.getElementById('login-error').textContent = msg || '';
+      document.getElementById('password').focus();
+    }
+
+    socket.on('connect', () => {
+      document.getElementById('conn').classList.remove('show');
+      const p = getPass();
+      if (p) auth(p);
+      else showLogin();
+    });
+    socket.on('disconnect', () => document.getElementById('conn').classList.add('show'));
+    socket.on('state', (v) => {
+      view = v;
+      render();
+    });
+
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      auth(document.getElementById('password').value);
+    });
+
+    async function action(payload) {
+      if (busy) return { ok: false };
+      busy = true;
+      renderControl();
+      const res = await request(socket, 'admin:action', payload);
+      busy = false;
+      if (!res.ok) {
+        if (res.reason === 'not_admin') showLogin('Sessão expirada. Entre de novo.');
+        else toast(reasonText(res.reason));
+      }
+      renderControl();
+      return res;
+    }
+
+    document.getElementById('primary').addEventListener('click', () => {
+      if (!view || !view.nextAction) return;
+      if (view.phase === 'lobby' && view.teams.length === 0 && !confirm('Nenhum time entrou ainda. Começar mesmo assim?')) return;
+      if (view.phase === 'question') {
+        const missing = view.teams.length - view.round.answeredCount;
+        if (missing > 0 && !confirm(`${missing} time(s) ainda não responderam e vão levar a pior opção. Encerrar agora?`)) return;
+      }
+      action({ type: 'advance', expect: { phase: view.phase, roundIndex: view.roundIndex } });
+    });
+    document.getElementById('extend').addEventListener('click', () => action({ type: 'extend', seconds: 15 }));
+    document.getElementById('reset-keep').addEventListener('click', () => {
+      if (confirm('Zerar o placar e voltar para a entrada, mantendo os times conectados?')) action({ type: 'reset', keepTeams: true });
+    });
+    document.getElementById('reset-all').addEventListener('click', () => {
+      if (confirm('Apagar todos os times e o placar? Os celulares voltam para a tela de entrada.')) action({ type: 'reset', keepTeams: false });
+    });
+
+    const countdown = new Countdown((ms) => {
+      const c = document.getElementById('clock');
+      c.textContent = view && view.timer ? `${Math.ceil(ms / 1000)}s` : '';
+      c.classList.toggle('low', ms <= 10000);
+    });
+
+    function render() {
+      countdown.set(view.timer);
+      countdown.tick();
+      document.getElementById('join-url').textContent = view.joinUrl || '';
+      renderControl();
+      renderScript();
+      renderTeams();
+      renderLog();
+    }
+
+    function renderControl() {
+      if (!view) return;
+      const r = view.round;
+      document.getElementById('st-phase').textContent = PHASE_LABEL[view.phase] || view.phase;
+      let what = '';
+      let sub = '';
+      if (view.phase === 'lobby') {
+        what = `${view.teams.length} time(s) conectado(s)`;
+        sub = 'Projete o telão e espere os times entrarem pelo QR code.';
+      } else if (view.phase === 'final') {
+        what = 'Jogo encerrado';
+        sub = view.teams[0] ? `Vencedor: ${view.teams[0].name}` : '';
+      } else if (r) {
+        what = `Rodada ${r.number}/${r.total} · ${r.moment} · ${r.title}`;
+        if (view.phase === 'bet') sub = `${r.betCount}/${view.teams.length} apostaram`;
+        else sub = `${r.answeredCount}/${view.teams.length} responderam`;
+        if (!view.rankingVisibleOnProjector) sub += ' · ranking escondido no telão';
+      }
+      document.getElementById('st-what').textContent = what;
+      document.getElementById('st-sub').textContent = sub;
+
+      const primary = document.getElementById('primary');
+      primary.hidden = !view.nextAction;
+      primary.textContent = busy ? 'Aguarde…' : view.nextAction || '';
+      primary.disabled = busy;
+      const ext = document.getElementById('extend');
+      ext.hidden = !view.timer;
+      ext.disabled = busy;
+    }
+
+    function renderScript() {
+      const box = document.getElementById('script');
+      const sig = JSON.stringify([view.phase, view.roundIndex, view.round && view.round.event, view.nextRound]);
+      if (sig === scriptSig) return;
+      scriptSig = sig;
+      const r = view.round;
+      if (!r) {
+        const parts = [el('h2', {}, 'Roteiro')];
+        if (view.phase === 'final') {
+          parts.push(el('p', {}, 'Anuncie o vencedor e as faixas. O telão revela a classificação de baixo para cima.'));
+        } else {
+          parts.push(el('p', {}, 'Explique as regras em 2 minutos: valuation inicial de R$ 100 mil, cada decisão multiplica, +10% para quem acerta nos primeiros 25 s, sem resposta conta como a pior.'));
+          if (view.nextRound) parts.push(el('p', { class: 'muted' }, `Primeira rodada: ${view.nextRound.moment} · ${view.nextRound.title}`));
+        }
+        box.replaceChildren(...parts.flat());
+        return;
+      }
+      const parts = [
+        el('h2', {}, `Roteiro · Rodada ${r.number} · ${r.difficultyLabel}`),
+        el('div', { class: 'k' }, 'Narração'),
+        el('p', {}, r.narration),
+        el('div', { class: 'k' }, 'Cenário (aparece nos celulares)'),
+        el('p', {}, r.scenario),
+        el('div', { class: 'k' }, 'Opções'),
+        r.options.map((o) =>
+          el(
+            'div',
+            { class: `aopt tier-${o.tier}` },
+            el(
+              'div',
+              { class: 'top' },
+              el('span', {}, o.label),
+              el('span', { class: 'm' }, `${TIER_LABEL[o.tier]} ${o.multiplier ? fmtMult(o.multiplier) : `aposta ${fmtMult(o.stakeReturn)}`}`)
+            ),
+            el('div', { class: 't' }, o.text)
+          )
+        ),
+        el('div', { class: 'k' }, 'Explicação da revelação'),
+        el('p', {}, r.explanation),
+      ];
+      if (r.twist) {
+        parts.push(el('div', { class: 'k' }, 'Crise (só depois de encerrar as respostas)'), el('p', {}, `${r.twist.title}. ${r.twist.narration}`));
+      }
+      if (r.notes) parts.push(el('div', { class: 'k' }, 'Notas do apresentador'), el('p', { class: 'notes' }, r.notes));
+      if (r.event) {
+        parts.push(
+          el('div', { class: 'k' }, 'Evento sorteado'),
+          el('p', {}, `📰 ${r.event.label} "${r.event.teamName}" ${fmtPct(r.event.pct)} (${fmtShort(r.event.before)} → ${fmtShort(r.event.after)})`)
+        );
+      }
+      if (view.nextRound) parts.push(el('p', { class: 'muted', style: 'margin-top:14px' }, `Próxima: rodada ${view.nextRound.number} · ${view.nextRound.moment} · ${view.nextRound.title}`));
+      box.replaceChildren(...parts.flat());
+    }
+
+    function renderTeams() {
+      const sig = JSON.stringify([view.teams, view.phase, view.roundIndex]);
+      if (sig === teamsSig) return;
+      teamsSig = sig;
+      document.getElementById('teams-title').textContent = `Times (${view.teams.length})`;
+      const r = view.round;
+      const byId = r ? Object.fromEntries(r.options.map((o) => [o.id, o])) : {};
+      const showRound = r && view.phase !== 'lobby' && view.phase !== 'final';
+
+      document.getElementById('teams-head').replaceChildren(
+        el('tr', {}, el('th', {}, '#'), el('th', {}, 'Time'), el('th', {}, 'Valuation'), el('th', {}, showRound ? (view.phase === 'bet' ? 'Aposta' : 'Resposta') : view.phase === 'final' ? 'Faixa' : ''), el('th', {}, ''))
+      );
+
+      const rows = view.teams.map((t) => {
+        let cell = '';
+        if (view.phase === 'final' && t.tier) {
+          cell = `${t.tier.emoji} ${t.tier.name}`;
+        } else if (showRound && view.phase === 'bet') {
+          cell = t.bet ? `${Math.round(t.bet * 100)}%` : '—';
+        } else if (showRound) {
+          if (t.result) {
+            const o = byId[t.result.optionId];
+            cell = el(
+              'span',
+              { class: `tag tier-${o.tier}` },
+              t.result.auto ? 'Sem resposta' : TIER_LABEL[o.tier],
+              t.result.multiplier ? ` ${fmtMult(t.result.multiplier)}` : '',
+              t.result.speedBonus ? ' ⚡' : '',
+              t.result.bet ? ` ${t.result.bet.delta >= 0 ? '+' : '−'}${fmtShort(Math.abs(t.result.bet.delta))}` : ''
+            );
+          } else if (t.answer) {
+            const o = byId[t.answer.optionId];
+            cell = el('span', { class: `tag tier-${o.tier}` }, `${TIER_LABEL[o.tier]} · ${Math.round((t.answer.ms || 0) / 1000)}s`);
+          } else {
+            cell = el('span', { class: 'muted' }, 'aguardando');
+          }
+        }
+        return el(
+          'tr',
+          {},
+          el('td', { class: 'num' }, String(t.position)),
+          el('td', {}, el('span', { class: `dot${t.connected ? ' on' : ''}`, title: t.connected ? 'conectado' : 'desconectado' }), t.name),
+          el('td', { class: 'num' }, fmtBRL(t.valuation)),
+          el('td', {}, cell),
+          el(
+            'td',
+            { style: 'white-space:nowrap;text-align:right' },
+            el(
+              'button',
+              {
+                class: 'btn ghost mini',
+                type: 'button',
+                onclick: () => {
+                  const name = prompt(`Novo nome para "${t.name}":`, t.name);
+                  if (name && name.trim() && name.trim() !== t.name) action({ type: 'renameTeam', teamId: t.id, name });
+                },
+              },
+              'Renomear'
+            ),
+            ' ',
+            el(
+              'button',
+              {
+                class: 'btn danger mini',
+                type: 'button',
+                onclick: () => {
+                  if (confirm(`Remover o time "${t.name}"? O celular volta para a tela de entrada.`)) action({ type: 'removeTeam', teamId: t.id });
+                },
+              },
+              'Remover'
+            )
+          )
+        );
       });
-    };
+      document.getElementById('teams-body').replaceChildren(...(rows.length ? rows : [el('tr', {}, el('td', { colspan: '5', class: 'muted' }, 'Nenhum time ainda.'))]));
+    }
 
-    document.getElementById('next-round-btn').onclick = () => {
-      socket.emit('admin:startNextRound', {}, (res) => {
-        if (res.finished) { log('Jogo encerrado.'); return; }
-        if (!res.ok) { log('Erro: ' + res.reason); return; }
-        document.getElementById('current-round').textContent = res.round.title;
-        document.getElementById('resolve-delayed-btn').style.display = 'none';
-        log('Rodada iniciada: ' + res.round.title);
-      });
-    };
-
-    document.getElementById('close-round-btn').onclick = () => {
-      socket.emit('admin:closeRoundNow', {}, () => log('Rodada fechada manualmente.'));
-    };
-
-    document.getElementById('resolve-delayed-btn').onclick = () => {
-      if (!pendingDelayedRoundId) return;
-      socket.emit('admin:resolveDelayed', { roundId: pendingDelayedRoundId }, (res) => {
-        if (res.ok) log('Revelação atrasada disparada para rodada ' + pendingDelayedRoundId);
-      });
-    };
-
-    socket.on('round:answer_count', ({ count, total }) => {
-      document.getElementById('answer-count').textContent = `Respostas: ${count}/${total}`;
-    });
-
-    socket.on('round:revealed', ({ roundId, correct, ranking }) => {
-      log(`Rodada ${roundId} revelada. Opção certa: ${correct}`);
-      renderRanking(ranking);
-    });
-
-    socket.on('round:closed_pending', ({ roundId }) => {
-      log(`Rodada ${roundId} fechada (revelação atrasada pendente).`);
-      pendingDelayedRoundId = roundId;
-      document.getElementById('resolve-delayed-btn').style.display = 'inline-block';
-    });
-
-    socket.on('round:delayed_revealed', ({ roundId, ranking }) => {
-      log(`Revelação atrasada da rodada ${roundId} aplicada.`);
-      document.getElementById('resolve-delayed-btn').style.display = 'none';
-      renderRanking(ranking);
-    });
-
-    socket.on('game:finished', ({ ranking }) => {
-      log('Jogo finalizado!');
-      renderRanking(ranking);
-    });
-
-    function renderRanking(list) {
-      const body = document.getElementById('ranking-body');
-      body.innerHTML = '';
-      list.forEach((t) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${t.name}</td><td>R$ ${t.valuation.toLocaleString('pt-BR')}</td>`;
-        body.appendChild(tr);
-      });
+    function renderLog() {
+      const sig = JSON.stringify(view.log.at(-1) || null) + view.log.length;
+      if (sig === logSig) return;
+      logSig = sig;
+      const box = document.getElementById('log');
+      box.replaceChildren(
+        ...view.log
+          .slice()
+          .reverse()
+          .map((e) => el('div', {}, `${new Date(e.at).toLocaleTimeString('pt-BR')}  ${e.msg}`))
+      );
     }
   </script>
 </body>

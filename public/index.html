@@ -2,148 +2,837 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Bora.ai — Startup Creation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0b1020" />
+<title>Bora.ai · Startup Creation</title>
+<link rel="stylesheet" href="/common.css" />
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 16px; background: #0f172a; color: #f1f5f9; }
-  h1 { font-size: 20px; }
-  input { width: 100%; padding: 12px; font-size: 16px; border-radius: 8px; border: none; margin-bottom: 8px; box-sizing: border-box; }
-  button { width: 100%; padding: 14px; font-size: 16px; border-radius: 8px; border: none; background: #ff6a00; color: white; font-weight: bold; }
-  button:disabled { background: #475569; }
-  .option { display: block; width: 100%; text-align: left; padding: 14px; margin-bottom: 10px; border-radius: 8px; border: 2px solid #334155; background: #1e293b; color: #f1f5f9; font-size: 15px; }
-  .option.selected { border-color: #ff6a00; background: #3b2412; }
-  #scenario { background: #1e293b; padding: 14px; border-radius: 8px; margin-bottom: 14px; }
-  #timer { font-size: 28px; font-weight: bold; text-align: center; margin-bottom: 12px; }
-  #valuation { font-size: 18px; text-align: center; margin-bottom: 8px; color: #4ade80; }
-  .hidden { display: none; }
+  body {
+    min-height: 100dvh;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .wrap {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    padding-top: max(12px, env(safe-area-inset-top));
+    background: rgba(11, 16, 32, 0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .topbar .name {
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .topbar .val {
+    font-weight: 800;
+    color: var(--best);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .brand {
+    text-align: center;
+    margin: 28px 0 20px;
+  }
+
+  .brand .logo {
+    font-size: 44px;
+  }
+
+  .brand h1 {
+    margin: 6px 0 4px;
+    font-size: 26px;
+  }
+
+  .brand p {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  input[type='text'] {
+    width: 100%;
+    padding: 14px;
+    font-size: 18px;
+    border-radius: 12px;
+    border: 2px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    outline: none;
+  }
+
+  input[type='text']:focus {
+    border-color: var(--accent);
+  }
+
+  .full {
+    width: 100%;
+    margin-top: 12px;
+    font-size: 18px;
+    padding: 16px;
+  }
+
+  .error {
+    color: var(--worst);
+    min-height: 1.4em;
+    margin: 10px 0 0;
+    font-weight: 600;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+
+  .center {
+    text-align: center;
+  }
+
+  .big-emoji {
+    font-size: 56px;
+    line-height: 1;
+    margin: 8px 0;
+  }
+
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--card-2);
+    color: var(--muted);
+  }
+
+  .timer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .timer .secs {
+    font-size: 30px;
+    font-weight: 800;
+    min-width: 2.4em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .timer .bar {
+    flex: 1;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--card-2);
+    overflow: hidden;
+  }
+
+  .timer .bar > div {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width 0.1s linear;
+  }
+
+  .timer.low .secs {
+    color: var(--worst);
+  }
+
+  .timer.low .bar > div {
+    background: var(--worst);
+  }
+
+  .bonus {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: -6px 0 12px;
+  }
+
+  h2 {
+    font-size: 20px;
+    margin: 0 0 8px;
+  }
+
+  .scenario {
+    margin: 0;
+    font-size: 16px;
+  }
+
+  .option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 16px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    border: 2px solid var(--line);
+    background: var(--card);
+    font-size: 16px;
+    line-height: 1.35;
+  }
+
+  .option.selected {
+    border-color: var(--accent);
+    background: #2b2112;
+  }
+
+  .option:disabled:not(.selected) {
+    opacity: 0.45;
+  }
+
+  .sent {
+    text-align: center;
+    font-weight: 700;
+    color: var(--best);
+    margin: 4px 0 0;
+  }
+
+  .bets {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 14px 0;
+  }
+
+  .bet {
+    padding: 16px 8px;
+    border-radius: 12px;
+    border: 2px solid var(--line);
+    background: var(--card);
+    text-align: center;
+  }
+
+  .bet b {
+    display: block;
+    font-size: 24px;
+  }
+
+  .bet span {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .bet.selected {
+    border-color: var(--accent);
+    background: #2b2112;
+  }
+
+  .bet-rules {
+    font-size: 14px;
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  .result {
+    border: 2px solid var(--tier, var(--line));
+    background: var(--tier-bg, var(--card));
+  }
+
+  .result .verdict {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--tier);
+    margin: 0 0 8px;
+  }
+
+  .label-sm {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin: 12px 0 4px;
+  }
+
+  .math {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    font-size: 17px;
+  }
+
+  .math .after {
+    color: var(--best);
+  }
+
+  .event {
+    border-left: 4px solid var(--info);
+  }
+
+  .twist {
+    border: 2px solid var(--worst);
+    background: var(--worst-bg);
+  }
+
+  .twist h2 {
+    color: var(--worst);
+  }
+
+  .final-tier {
+    font-size: 30px;
+    font-weight: 800;
+    margin: 4px 0;
+  }
+
+  .final-val {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--best);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pop {
+    animation: pop 0.35s ease-out;
+  }
+
+  @keyframes pop {
+    from {
+      transform: scale(0.96);
+      opacity: 0.4;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
 </style>
 </head>
 <body>
-  <h1>🚀 Bora.ai — Startup Creation</h1>
-
-  <div id="join-screen">
-    <p>Nome do time:</p>
-    <input id="team-name" placeholder="Ex: Os Escaláveis" maxlength="30" />
-    <button id="join-btn">Entrar</button>
-    <p id="join-error" style="color:#f87171;"></p>
-  </div>
-
-  <div id="game-screen" class="hidden">
-    <div id="valuation">Valuation: R$ --</div>
-    <div id="timer">--</div>
-    <div id="scenario">
-      <strong id="round-title"></strong>
-      <p id="narration"></p>
-      <p id="scenario-text"></p>
-    </div>
-    <div id="options"></div>
-    <p id="status"></p>
-  </div>
-
-  <div id="waiting-screen" class="hidden">
-    <p>Aguardando a próxima rodada...</p>
-  </div>
+  <div id="conn" class="conn-banner">Sem conexão. Reconectando…</div>
+  <header id="topbar" class="topbar" hidden>
+    <span id="tb-name" class="name"></span>
+    <span id="tb-val" class="val"></span>
+  </header>
+  <main id="app" class="wrap"></main>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/common.js"></script>
   <script>
-    const socket = io();
-    let myOptionChosen = null;
-    let roundEndsAt = null;
-    let timerInterval = null;
+    const { el, fmtBRL, fmtMult, fmtPct, ordinal, Countdown, reasonText, request, storage } = window.Bora;
+    const TOKEN_KEY = 'bora.teamToken';
+    const app = document.getElementById('app');
+    const socket = io({ reconnectionDelayMax: 3000 });
 
-    const joinScreen = document.getElementById('join-screen');
-    const gameScreen = document.getElementById('game-screen');
-    const waitingScreen = document.getElementById('waiting-screen');
+    let token = storage.get(TOKEN_KEY);
+    let view = null;
+    let notice = '';
+    let lastScreenKey = '';
+    // Estado local da tela da pergunta (sobrevive aos re-renders).
+    let selected = { key: null, optionId: null };
+    let sending = false;
+    let actionError = '';
+    let bonusEndsAt = null;
+    let lastSig = '';
 
-    document.getElementById('join-btn').onclick = () => {
-      const name = document.getElementById('team-name').value.trim();
-      if (!name) return;
-      socket.emit('team:join', { name }, (res) => {
-        if (!res.ok) {
-          document.getElementById('join-error').textContent =
-            res.reason === 'name_taken' ? 'Esse nome já existe, escolha outro.' : 'Erro ao entrar.';
-          return;
+    const countdown = new Countdown(updateTimer);
+
+    // --- Conexão ----------------------------------------------------------
+
+    socket.on('connect', async () => {
+      document.getElementById('conn').classList.remove('show');
+      if (!token) {
+        render();
+        return;
+      }
+      const res = await request(socket, 'team:resume', { token });
+      if (!res.ok && res.reason === 'unknown_token') forgetTeam('');
+    });
+
+    socket.on('disconnect', () => {
+      document.getElementById('conn').classList.add('show');
+    });
+
+    socket.on('state', (v) => {
+      const prev = view;
+      view = v;
+      bonusEndsAt = v.speedBonusRemainingMs !== undefined ? performance.now() + v.speedBonusRemainingMs : null;
+      if (!prev || prev.phase !== v.phase) actionError = '';
+      if (prev && prev.phase !== v.phase && v.phase === 'question' && navigator.vibrate) navigator.vibrate(120);
+      render();
+    });
+
+    socket.on('team:removed', () => forgetTeam('O operador removeu este time. Entrem de novo com outro nome.'));
+
+    function forgetTeam(message) {
+      token = null;
+      view = null;
+      storage.remove(TOKEN_KEY);
+      notice = message;
+      render();
+    }
+
+    // Mantém a tela acesa durante o jogo (só funciona onde o navegador permite).
+    async function keepAwake() {
+      try {
+        if ('wakeLock' in navigator && document.visibilityState === 'visible') {
+          await navigator.wakeLock.request('screen');
         }
-        joinScreen.classList.add('hidden');
-        waitingScreen.classList.remove('hidden');
-      });
-    };
-
-    socket.on('round:started', ({ round, durationMs, serverStartedAt }) => {
-      myOptionChosen = null;
-      waitingScreen.classList.add('hidden');
-      gameScreen.classList.remove('hidden');
-      document.getElementById('round-title').textContent = round.title;
-      document.getElementById('narration').textContent = round.narration;
-      document.getElementById('scenario-text').textContent = round.scenario;
-      document.getElementById('status').textContent = '';
-
-      const optionsDiv = document.getElementById('options');
-      optionsDiv.innerHTML = '';
-      round.options.forEach((opt) => {
-        const btn = document.createElement('button');
-        btn.className = 'option';
-        btn.textContent = opt.label;
-        btn.onclick = () => chooseOption(opt.id, btn);
-        optionsDiv.appendChild(btn);
-      });
-
-      roundEndsAt = serverStartedAt + durationMs;
-      clearInterval(timerInterval);
-      timerInterval = setInterval(updateTimer, 200);
-      updateTimer();
+      } catch {
+        // sem suporte ou sem permissão: segue normal
+      }
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && token) keepAwake();
     });
 
-    function updateTimer() {
-      const msLeft = Math.max(0, roundEndsAt - Date.now());
-      document.getElementById('timer').textContent = Math.ceil(msLeft / 1000) + 's';
-      if (msLeft <= 0) clearInterval(timerInterval);
+    // --- Telas ------------------------------------------------------------
+
+    function render() {
+      const tb = document.getElementById('topbar');
+      if (!token || !view) {
+        tb.hidden = true;
+        lastSig = '';
+        countdown.stop();
+        if (!token) renderJoin();
+        else if (lastScreenKey !== 'loading') {
+          lastScreenKey = 'loading';
+          app.replaceChildren(el('p', { class: 'center muted', style: 'margin-top:40px' }, 'Conectando…'));
+        }
+        return;
+      }
+      tb.hidden = false;
+      // Outros times respondendo geram novos estados; só redesenha se algo
+      // mudou para este time, senão um toque no meio do redesenho se perde.
+      const sig = JSON.stringify([{ ...view, timer: null, speedBonusRemainingMs: null }, selected, sending, actionError]);
+      if (sig === lastSig) {
+        countdown.set(view.timer);
+        return;
+      }
+      lastSig = sig;
+      document.getElementById('tb-name').textContent = view.team.name;
+      document.getElementById('tb-val').textContent = fmtBRL(view.team.valuation);
+
+      const screens = {
+        lobby: renderLobby,
+        bet: renderBet,
+        question: renderQuestion,
+        closed: renderClosed,
+        twist: renderTwist,
+        reveal: renderReveal,
+        final: renderFinal,
+      };
+      const nodes = (screens[view.phase] || renderLobby)();
+      const key = `${view.phase}:${view.round ? view.round.number : ''}`;
+      app.replaceChildren(...nodes);
+      if (key !== lastScreenKey) {
+        app.firstElementChild && app.firstElementChild.classList.add('pop');
+        window.scrollTo(0, 0);
+        lastScreenKey = key;
+      }
+      countdown.set(view.timer);
     }
 
-    function chooseOption(optionId, btnEl) {
-      if (myOptionChosen) return; // já respondeu
-      myOptionChosen = optionId;
-      document.querySelectorAll('.option').forEach((b) => b.classList.remove('selected'));
-      btnEl.classList.add('selected');
-      socket.emit('team:answer', { optionId }, (res) => {
-        document.getElementById('status').textContent = res.ok
-          ? 'Resposta registrada! Aguardando o resultado...'
-          : 'Não foi possível registrar (' + res.reason + ')';
+    function renderJoin() {
+      if (lastScreenKey === 'join') return; // não apaga o que está sendo digitado
+      lastScreenKey = 'join';
+      const input = el('input', {
+        type: 'text',
+        id: 'team-name',
+        maxlength: '24',
+        autocomplete: 'off',
+        autocapitalize: 'words',
+        enterkeyhint: 'go',
+        placeholder: 'Ex.: Os Escaláveis',
       });
+      const error = el('p', { class: 'error', role: 'alert' }, notice);
+      const button = el('button', { class: 'btn full', type: 'submit' }, 'Entrar no jogo');
+      const form = el(
+        'form',
+        {
+          onsubmit: async (e) => {
+            e.preventDefault();
+            const name = input.value.trim();
+            if (!name) {
+              error.textContent = 'Digitem o nome do time.';
+              return;
+            }
+            button.disabled = true;
+            error.textContent = '';
+            const res = await request(socket, 'team:join', { name });
+            button.disabled = false;
+            if (!res.ok) {
+              error.textContent = reasonText(res.reason);
+              return;
+            }
+            token = res.token;
+            storage.set(TOKEN_KEY, token);
+            notice = '';
+            keepAwake();
+            render();
+          },
+        },
+        el('label', { for: 'team-name' }, 'Nome do time'),
+        input,
+        button,
+        error
+      );
+      app.replaceChildren(
+        el(
+          'div',
+          { class: 'brand' },
+          el('div', { class: 'logo' }, '🎟️'),
+          el('h1', {}, 'Startup Creation'),
+          el('p', {}, 'Vocês são o time técnico da Bora.ai.')
+        ),
+        el('div', { class: 'card' }, form),
+        el('p', { class: 'muted center', style: 'font-size:14px' }, 'Um celular por time. Discutam juntos antes de responder.')
+      );
     }
 
-    socket.on('round:revealed', ({ ranking }) => {
-      gameScreen.classList.add('hidden');
-      waitingScreen.classList.remove('hidden');
-      waitingScreen.innerHTML = '<p>Rodada encerrada! Olha o placar no telão. ⏳</p>';
-      updateMyValuation(ranking);
-    });
+    function roundMeta() {
+      const r = view.round;
+      return el(
+        'div',
+        { class: 'meta' },
+        el('span', {}, `Rodada ${r.number} de ${r.total} · ${r.moment}`),
+        el('span', { class: 'pill' }, r.difficultyLabel)
+      );
+    }
 
-    socket.on('round:closed_pending', () => {
-      document.getElementById('status').textContent = 'Resposta registrada. O resultado vem mais tarde...';
-    });
+    function timerBlock() {
+      return el(
+        'div',
+        { class: 'timer', id: 'timer' },
+        el('span', { class: 'secs', id: 'timer-secs' }, ''),
+        el('div', { class: 'bar' }, el('div', { id: 'timer-bar', style: 'width:100%' }))
+      );
+    }
 
-    socket.on('round:delayed_revealed', ({ ranking }) => {
-      updateMyValuation(ranking);
-    });
-
-    function updateMyValuation(ranking) {
-      // Essa tela não sabe o próprio teamId de forma amigável no protótipo;
-      // no ranking completo dá pra achar pelo nome digitado. Suficiente pro teste.
-      const name = document.getElementById('team-name').value.trim();
-      const mine = ranking.find((t) => t.name === name);
-      if (mine) {
-        document.getElementById('valuation').textContent =
-          'Valuation: R$ ' + mine.valuation.toLocaleString('pt-BR');
+    function updateTimer(ms, frac) {
+      const secs = document.getElementById('timer-secs');
+      if (!secs) return;
+      secs.textContent = `${Math.ceil(ms / 1000)}s`;
+      document.getElementById('timer-bar').style.width = `${Math.max(0, Math.min(1, frac)) * 100}%`;
+      document.getElementById('timer').classList.toggle('low', ms <= 10000);
+      const bonus = document.getElementById('bonus');
+      if (bonus && bonusEndsAt !== null) {
+        const left = Math.ceil((bonusEndsAt - performance.now()) / 1000);
+        bonus.textContent = left > 0 ? `⚡ Acertem nos próximos ${left}s para ganhar +10%` : '';
       }
     }
 
-    socket.on('game:finished', ({ ranking }) => {
-      waitingScreen.classList.remove('hidden');
-      gameScreen.classList.add('hidden');
-      updateMyValuation(ranking);
-      waitingScreen.innerHTML = '<p>Jogo encerrado! Confira o resultado no telão.</p>';
-    });
+    function positionLine() {
+      if (view.position) return `Vocês estão em ${ordinal(view.position)} de ${view.teamCount} times.`;
+      return '🔒 O ranking fica escondido até o resultado final.';
+    }
+
+    function renderLobby() {
+      return [
+        el(
+          'div',
+          { class: 'card center' },
+          el('div', { class: 'big-emoji' }, '✅'),
+          el('h2', {}, 'Vocês estão dentro!'),
+          el('p', { class: 'muted', style: 'margin:0' }, 'Olhem para o telão. O jogo começa em instantes.')
+        ),
+        el(
+          'div',
+          { class: 'card' },
+          el('div', { class: 'label-sm', style: 'margin-top:0' }, 'Como funciona'),
+          el(
+            'ul',
+            { class: 'bet-rules' },
+            el('li', {}, 'Todo time começa com R$ 100 mil de valuation.'),
+            el('li', {}, 'Cada decisão multiplica o valuation: a melhor sobe, a pior derruba.'),
+            el('li', {}, 'Acertar nos primeiros 25 segundos vale +10%.'),
+            el('li', {}, 'Sem resposta conta como a pior opção.'),
+            el('li', {}, 'Maior valuation no final ganha os AWS Credits.')
+          )
+        ),
+      ];
+    }
+
+    function renderBet() {
+      const v = view.team.valuation;
+      const choice = view.bet.choice;
+      const buttons = view.bet.fractions.map((f) =>
+        el(
+          'button',
+          {
+            class: `bet${choice === f ? ' selected' : ''}`,
+            disabled: sending,
+            onclick: async () => {
+              sending = true;
+              actionError = '';
+              render();
+              const res = await request(socket, 'team:bet', { fraction: f });
+              sending = false;
+              if (!res.ok) actionError = reasonText(res.reason);
+              render();
+            },
+          },
+          el('b', {}, `${Math.round(f * 100)}%`),
+          el('span', {}, fmtBRL(Math.round(v * f)))
+        )
+      );
+      const stakeFrac = choice ?? view.bet.defaultFraction;
+      const stake = Math.round(v * stakeFrac);
+      return [
+        el(
+          'div',
+          { class: 'card' },
+          roundMeta(),
+          timerBlock(),
+          el('h2', {}, '🎲 Aposta final'),
+          el('p', { class: 'scenario' }, 'Quanto do valuation vocês apostam? A pergunta só aparece depois da aposta.'),
+          el('div', { class: 'bets' }, buttons),
+          el(
+            'ul',
+            { class: 'bet-rules' },
+            el('li', {}, `Melhor opção: ganham ${fmtBRL(stake)}.`),
+            el('li', {}, `Opção mediana: perdem ${fmtBRL(Math.round(stake / 2))}.`),
+            el('li', {}, `Pior opção ou sem resposta: perdem ${fmtBRL(stake)}.`)
+          ),
+          el(
+            'p',
+            { class: choice ? 'sent' : 'muted', style: 'margin-top:12px;text-align:center' },
+            choice
+              ? `Aposta registrada: ${Math.round(choice * 100)}%. Dá para trocar até o tempo acabar.`
+              : `Sem escolha, a aposta fica em ${Math.round(view.bet.defaultFraction * 100)}%.`
+          ),
+          el('p', { class: 'error', role: 'alert' }, actionError)
+        ),
+      ];
+    }
+
+    function renderQuestion() {
+      const key = `r${view.round.number}`;
+      if (selected.key !== key) selected = { key, optionId: null };
+      const answered = view.myAnswer;
+      const current = answered || selected.optionId;
+
+      const options = view.options.map((o) =>
+        el(
+          'button',
+          {
+            class: `option${current === o.id ? ' selected' : ''}`,
+            disabled: !!answered || sending,
+            onclick: () => {
+              selected.optionId = o.id;
+              render();
+            },
+          },
+          o.label
+        )
+      );
+
+      const confirm = answered
+        ? el('p', { class: 'sent' }, '✓ Resposta enviada. Aguardem a revelação.')
+        : el(
+            'button',
+            {
+              class: 'btn full',
+              disabled: !selected.optionId || sending,
+              onclick: async () => {
+                sending = true;
+                actionError = '';
+                render();
+                const res = await request(socket, 'team:answer', { optionId: selected.optionId });
+                sending = false;
+                if (!res.ok && res.reason !== 'already_answered') actionError = reasonText(res.reason);
+                render();
+              },
+            },
+            sending ? 'Enviando…' : 'Confirmar resposta'
+          );
+
+      return [
+        el(
+          'div',
+          { class: 'card' },
+          roundMeta(),
+          timerBlock(),
+          !answered && !view.round.bet ? el('div', { class: 'bonus', id: 'bonus' }) : null,
+          el('h2', {}, view.round.title),
+          el('p', { class: 'scenario' }, view.round.scenario)
+        ),
+        el('div', {}, options),
+        confirm,
+        el('p', { class: 'error', role: 'alert' }, actionError),
+      ];
+    }
+
+    function chosenLine() {
+      if (view.participating === false) {
+        return el('p', { class: 'muted' }, 'Vocês entraram depois do fim desta rodada. Participam a partir da próxima.');
+      }
+      const opt = view.myAnswer && view.options.find((o) => o.id === view.myAnswer);
+      return opt
+        ? [el('div', { class: 'label-sm' }, 'Vocês escolheram'), el('p', { style: 'margin:0' }, opt.label)]
+        : el('p', { class: 'muted' }, 'Vocês não responderam a tempo: conta como a pior opção.');
+    }
+
+    function renderClosed() {
+      return [
+        el(
+          'div',
+          { class: 'card center' },
+          roundMeta(),
+          el('div', { class: 'big-emoji' }, '⏱️'),
+          el('h2', {}, 'Respostas encerradas'),
+          el('p', { class: 'muted', style: 'margin:0' }, 'Olhem para o telão. A revelação vem aí.')
+        ),
+        el('div', { class: 'card' }, chosenLine()),
+      ];
+    }
+
+    function renderTwist() {
+      return [
+        el(
+          'div',
+          { class: 'card twist' },
+          el('div', { class: 'big-emoji' }, '⚠️'),
+          el('h2', {}, view.twist.title),
+          el('p', { style: 'margin:0' }, view.twist.narration)
+        ),
+        el('div', { class: 'card' }, chosenLine(), el('p', { class: 'muted', style: 'margin-bottom:0' }, 'O que aconteceu com a escolha de vocês? Olhem o telão…')),
+      ];
+    }
+
+    function renderReveal() {
+      const r = view.result;
+      const out = [];
+      if (!r) {
+        out.push(
+          el(
+            'div',
+            { class: 'card' },
+            roundMeta(),
+            el('p', {}, 'Vocês entraram depois do fim desta rodada.'),
+            el('div', { class: 'label-sm' }, 'Melhor opção'),
+            el('p', { style: 'margin:0' }, view.reveal.bestLabel)
+          )
+        );
+        out.push(el('p', { class: 'muted center' }, positionLine()));
+        return out;
+      }
+
+      const verdict = r.auto
+        ? '⏱️ Sem resposta'
+        : { best: '✅ Melhor escolha!', mid: '🟡 Escolha mediana', worst: '❌ Pior escolha' }[r.tier];
+
+      let math;
+      if (r.bet) {
+        const sign = r.bet.delta >= 0 ? '+' : '−';
+        math = el(
+          'p',
+          { class: 'math', style: 'margin:0' },
+          `Aposta de ${fmtBRL(r.bet.stake)} (${Math.round(r.bet.fraction * 100)}%${r.bet.auto ? ', automática' : ''}): ${sign}${fmtBRL(Math.abs(r.bet.delta))} = `,
+          el('span', { class: 'after' }, fmtBRL(r.after))
+        );
+      } else {
+        math = el(
+          'p',
+          { class: 'math', style: 'margin:0' },
+          `${fmtBRL(r.before)} ${fmtMult(r.multiplier)}`,
+          r.speedBonus ? ` ⚡${fmtMult(r.speedBonusMultiplier)}` : '',
+          ' = ',
+          el('span', { class: 'after' }, fmtBRL(r.after))
+        );
+      }
+
+      out.push(
+        el(
+          'div',
+          { class: `card result tier-${r.tier}` },
+          roundMeta(),
+          el('p', { class: 'verdict' }, verdict),
+          r.auto ? el('p', { style: 'margin:0 0 6px' }, 'Sem resposta conta como a pior opção:') : null,
+          el('p', { style: 'margin:0;font-weight:600' }, r.optionLabel),
+          el('p', { style: 'margin:8px 0 0' }, r.text),
+          r.speedBonus ? el('p', { class: 'bonus', style: 'margin:10px 0 0' }, '⚡ Bônus de velocidade: +10%') : null,
+          el('div', { class: 'label-sm' }, 'Valuation'),
+          math
+        )
+      );
+
+      if (r.tier !== 'best') {
+        out.push(
+          el(
+            'div',
+            { class: 'card' },
+            el('div', { class: 'label-sm', style: 'margin-top:0' }, 'Melhor opção'),
+            el('p', { style: 'margin:0;font-weight:600' }, view.reveal.bestLabel),
+            el('p', { class: 'muted', style: 'margin:8px 0 0' }, view.reveal.explanation)
+          )
+        );
+      }
+
+      if (r.event) {
+        out.push(
+          el(
+            'div',
+            { class: 'card event' },
+            el('div', { class: 'label-sm', style: 'margin-top:0' }, 'Evento aleatório'),
+            el('p', { style: 'margin:0;font-weight:700' }, `📰 ${r.event.label}: ${fmtPct(r.event.pct)}`),
+            el('p', { class: 'muted', style: 'margin:4px 0 0' }, `Valuation agora: ${fmtBRL(r.event.after)}`)
+          )
+        );
+      }
+
+      out.push(el('p', { class: 'muted center' }, positionLine()));
+      return out;
+    }
+
+    function renderFinal() {
+      const f = view.final;
+      const won = f.position === 1;
+      return [
+        el(
+          'div',
+          { class: 'card center' },
+          el('div', { class: 'big-emoji' }, f.tier.emoji),
+          el('div', { class: 'final-tier' }, f.tier.name),
+          el('p', { style: 'margin:0 0 12px' }, f.tier.message),
+          el('div', { class: 'final-val' }, fmtBRL(view.team.valuation)),
+          el('p', { class: 'muted' }, `${ordinal(f.position)} lugar de ${f.teamCount} times`)
+        ),
+        el(
+          'div',
+          { class: 'card center' },
+          won
+            ? el('h2', { style: 'margin:0' }, '🏆 Vocês venceram!')
+            : el('p', { style: 'margin:0' }, '🏆 Vencedor: ', el('b', {}, f.winnerName))
+        ),
+        el('p', { class: 'muted center' }, 'Obrigado por jogar!'),
+      ];
+    }
+
+    render();
   </script>
 </body>
 </html>

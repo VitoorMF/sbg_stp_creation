@@ -2,83 +2,993 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
-<title>Bora.ai — Placar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Telão · Startup Creation</title>
+<link rel="stylesheet" href="/common.css" />
 <style>
-  body { font-family: system-ui, sans-serif; background: #0f172a; color: #f1f5f9; margin: 0; padding: 40px; text-align: center; }
-  h1 { font-size: 48px; margin-bottom: 0; }
-  #timer { font-size: 72px; font-weight: bold; color: #ff6a00; margin: 20px 0; }
-  #scenario { font-size: 28px; max-width: 900px; margin: 0 auto 30px; }
-  table { margin: 0 auto; border-collapse: collapse; font-size: 28px; }
-  td, th { padding: 12px 24px; border-bottom: 1px solid #334155; }
-  .rank-1 { color: #fbbf24; font-weight: bold; }
-  #hidden-ranking { font-size: 32px; color: #94a3b8; margin-top: 40px; }
+  html {
+    font-size: clamp(13px, 1.2vw, 30px);
+  }
+
+  body {
+    min-height: 100vh;
+    overflow: hidden;
+    background: radial-gradient(1200px 700px at 85% -10%, rgba(255, 153, 0, 0.1), transparent 60%), var(--bg);
+  }
+
+  .stage {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 1.4rem 2.2rem 1.6rem;
+  }
+
+  .hud {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.6rem;
+  }
+
+  .brand {
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+
+  .brand b {
+    color: var(--accent);
+  }
+
+  .clock {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    font-weight: 900;
+    font-size: 3.2rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+  }
+
+  .clock small {
+    font-size: 1.2rem;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .clock.low {
+    color: var(--worst);
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    50% {
+      opacity: 0.55;
+    }
+  }
+
+  .timebar {
+    height: 0.4rem;
+    border-radius: 999px;
+    background: var(--card);
+    overflow: hidden;
+    margin: 0.6rem 0 1rem;
+    visibility: hidden;
+  }
+
+  .timebar.on {
+    visibility: visible;
+  }
+
+  .timebar > div {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.1s linear;
+  }
+
+  .timebar.low > div {
+    background: var(--worst);
+  }
+
+  main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .fade {
+    animation: fade 0.45s ease-out;
+  }
+
+  @keyframes fade {
+    from {
+      opacity: 0;
+      transform: translateY(0.6rem);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .round-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .pill {
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    background: var(--card-2);
+    font-size: 0.9rem;
+  }
+
+  .pill.facil {
+    color: var(--best);
+  }
+
+  .pill.media {
+    color: var(--mid);
+  }
+
+  .pill.dificil {
+    color: var(--worst);
+  }
+
+  h1 {
+    font-size: 2.9rem;
+    line-height: 1.15;
+    margin: 0 0 0.6rem;
+  }
+
+  .narration {
+    font-size: 1.15rem;
+    color: var(--muted);
+    font-style: italic;
+    margin: 0 0 0.8rem;
+  }
+
+  .scenario {
+    font-size: 1.85rem;
+    line-height: 1.4;
+    margin: 0 0 1.6rem;
+    max-width: 72rem;
+  }
+
+  .opts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .opt {
+    background: var(--card);
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.3rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .footer {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--muted);
+    padding-top: 1rem;
+  }
+
+  .progress {
+    flex: 1;
+    height: 0.7rem;
+    border-radius: 999px;
+    background: var(--card);
+    overflow: hidden;
+  }
+
+  .progress > div {
+    height: 100%;
+    background: var(--best);
+    transition: width 0.3s ease;
+  }
+
+  /* Lobby */
+  .lobby {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 2.5rem;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .lobby > * {
+    align-self: center;
+  }
+
+  /* Centraliza com margens automáticas: se o conteúdo não couber, ele começa
+     no topo e o fit() percebe o estouro (justify-content: center esconderia). */
+  .lobby > .lobby-text {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .lobby-text > :first-child,
+  .center-stage > :first-child {
+    margin-top: auto;
+  }
+
+  .lobby-text > :last-child,
+  .center-stage > :last-child {
+    margin-bottom: auto;
+  }
+
+  .lobby h1 {
+    font-size: 4rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .lobby .lead {
+    font-size: 1.5rem;
+    color: var(--muted);
+    margin: 0 0 1.6rem;
+  }
+
+  .steps {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.4rem;
+    font-size: 1.45rem;
+  }
+
+  .steps li {
+    display: flex;
+    gap: 0.8rem;
+    align-items: baseline;
+    margin-bottom: 0.7rem;
+  }
+
+  .steps b {
+    color: var(--accent);
+    min-width: 1.4rem;
+  }
+
+  .qr {
+    background: white;
+    border-radius: 1.2rem;
+    padding: 1.2rem;
+    text-align: center;
+    color: #111;
+  }
+
+  /* Em vw/vh para o QR não encolher junto quando a lista de times é longa. */
+  .qr img {
+    width: 100%;
+    max-width: min(34vw, 60vh);
+    aspect-ratio: 1;
+    display: block;
+    margin: 0 auto;
+  }
+
+  .qr .url {
+    font-size: 1.35rem;
+    font-weight: 800;
+    margin-top: 0.6rem;
+    word-break: break-all;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .chip {
+    padding: 0.3rem 0.9rem;
+    border-radius: 999px;
+    background: var(--card-2);
+    font-size: 1.05rem;
+    font-weight: 700;
+    animation: fade 0.4s ease-out;
+  }
+
+  .teams-head {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--muted);
+    margin: 1.2rem 0 0.7rem;
+  }
+
+  /* Aposta e crise */
+  .center-stage {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .center-stage .icon {
+    font-size: 6rem;
+    line-height: 1;
+  }
+
+  .center-stage h1 {
+    font-size: 3.6rem;
+  }
+
+  .center-stage p {
+    font-size: 1.6rem;
+    max-width: 56rem;
+    margin: 0;
+  }
+
+  .rules {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .rules div {
+    background: var(--card);
+    border: 2px solid var(--tier);
+    border-radius: var(--radius);
+    padding: 0.9rem 1.3rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .twist-stage h1 {
+    color: var(--worst);
+  }
+
+  /* Revelação */
+  .reveal {
+    display: grid;
+    grid-template-columns: 1.75fr 1fr;
+    gap: 2rem;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .reveal h1 {
+    font-size: 1.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .ropts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .ropt {
+    position: relative;
+    background: var(--card);
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+    padding: 0.6rem 1rem;
+    overflow: hidden;
+  }
+
+  .ropt.best {
+    border-color: var(--best);
+    background: var(--best-bg);
+  }
+
+  .ropt .row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+
+  .ropt .row .count {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .ropt .txt {
+    font-size: 0.98rem;
+    color: var(--muted);
+    margin: 0.25rem 0 0;
+  }
+
+  .ropt.best .txt {
+    color: var(--text);
+  }
+
+  .ropt .fill {
+    height: 0.35rem;
+    border-radius: 999px;
+    background: var(--card-2);
+    margin-top: 0.4rem;
+    overflow: hidden;
+  }
+
+  .ropt .fill > div {
+    height: 100%;
+    background: var(--muted);
+    animation: grow 0.8s ease-out;
+  }
+
+  .ropt.best .fill > div {
+    background: var(--best);
+  }
+
+  @keyframes grow {
+    from {
+      width: 0 !important;
+    }
+  }
+
+  .explain {
+    margin-top: 0.8rem;
+    padding: 0.8rem 1.1rem;
+    border-left: 0.35rem solid var(--accent);
+    background: var(--card);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+
+  .event {
+    margin-top: 0.7rem;
+    padding: 0.6rem 1.1rem;
+    border-radius: var(--radius);
+    background: var(--card);
+    border: 2px dashed var(--info);
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+
+  .event .pct.up {
+    color: var(--best);
+  }
+
+  .event .pct.down {
+    color: var(--worst);
+  }
+
+  .side {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1rem 1.2rem;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .side h2 {
+    margin: 0 0 0.6rem;
+    font-size: 1.3rem;
+    color: var(--muted);
+  }
+
+  .ranking {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .ranking.two {
+    columns: 2;
+    column-gap: 1.2rem;
+  }
+
+  .ranking li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 1.15rem;
+    break-inside: avoid;
+  }
+
+  .ranking.two li {
+    font-size: 0.95rem;
+  }
+
+  .ranking .pos {
+    width: 1.8rem;
+    color: var(--muted);
+    font-weight: 800;
+  }
+
+  .ranking .nm {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 700;
+  }
+
+  .ranking .v {
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    color: var(--best);
+  }
+
+  .ranking li.first .nm,
+  .ranking li.first .pos {
+    color: var(--accent);
+  }
+
+  .locked {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0.6rem;
+  }
+
+  .locked .icon {
+    font-size: 4rem;
+  }
+
+  .locked p {
+    font-size: 1.3rem;
+    margin: 0;
+    color: var(--muted);
+  }
+
+  /* Final */
+  .final {
+    display: grid;
+    grid-template-columns: 1fr 1.25fr;
+    gap: 2rem;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .winner {
+    background: linear-gradient(160deg, rgba(255, 153, 0, 0.22), var(--card));
+    border: 2px solid var(--accent);
+    border-radius: 1.4rem;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    gap: 0.6rem;
+    opacity: 0;
+    animation: winner 0.8s ease-out forwards;
+  }
+
+  @keyframes winner {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .winner .trophy {
+    font-size: 5rem;
+    line-height: 1;
+  }
+
+  .winner .wname {
+    font-size: 3rem;
+    font-weight: 900;
+    line-height: 1.1;
+    word-break: break-word;
+  }
+
+  .winner .wval {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: var(--best);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .winner .wtier {
+    font-size: 1.5rem;
+    font-weight: 800;
+  }
+
+  .winner .wmsg {
+    font-size: 1.2rem;
+    color: var(--muted);
+  }
+
+  .standings li {
+    opacity: 0;
+    animation: fade 0.4s ease-out forwards;
+  }
+
+  .standings .tier {
+    color: var(--muted);
+    font-size: 0.9em;
+    white-space: nowrap;
+  }
+
+  .fs-btn {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+    opacity: 0.5;
+  }
+
+  .fs-btn:hover {
+    opacity: 1;
+  }
+
+  :fullscreen .fs-btn {
+    display: none;
+  }
+
+  .waiting {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 1.6rem;
+  }
 </style>
 </head>
 <body>
-  <h1 id="round-title">🚀 Bora.ai — Startup Creation</h1>
-  <div id="timer"></div>
-  <div id="scenario"></div>
-  <table>
-    <thead><tr><th>Time</th><th>Valuation</th></tr></thead>
-    <tbody id="ranking-body"></tbody>
-  </table>
-  <div id="hidden-ranking" class="hidden" style="display:none;">Ranking em suspense até o final...</div>
+  <div id="conn" class="conn-banner">Sem conexão com o servidor. Reconectando…</div>
+  <div class="stage">
+    <header class="hud">
+      <div class="brand">🎟️ <b>Bora.ai</b> · Startup Creation</div>
+      <button id="fs" class="btn ghost fs-btn" type="button">Tela cheia (F)</button>
+      <div id="clock" class="clock"></div>
+    </header>
+    <div id="timebar" class="timebar"><div id="timebar-fill"></div></div>
+    <main id="main"><div class="waiting">Conectando ao jogo…</div></main>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/common.js"></script>
   <script>
-    const socket = io();
-    let roundEndsAt = null;
-    let timerInterval = null;
-    // Esconde o ranking nas rodadas 7, 8 e 9, como combinado na documentação.
-    const HIDE_RANKING_FROM_ROUND = 7;
+    const { el, fmtBRL, fmtShort, fmtPct, ordinal, Countdown } = window.Bora;
+    const main = document.getElementById('main');
+    const socket = io({ reconnectionDelayMax: 3000 });
+    let view = null;
+    let lastSig = '';
 
-    socket.on('round:started', ({ round, durationMs, serverStartedAt }) => {
-      document.getElementById('round-title').textContent = round.title;
-      document.getElementById('scenario').textContent = round.scenario;
-      roundEndsAt = serverStartedAt + durationMs;
-      clearInterval(timerInterval);
-      timerInterval = setInterval(updateTimer, 200);
-      updateTimer();
-      toggleRankingVisibility(round.id);
-    });
-
-    function updateTimer() {
-      const msLeft = Math.max(0, roundEndsAt - Date.now());
-      document.getElementById('timer').textContent = Math.ceil(msLeft / 1000) + 's';
-      if (msLeft <= 0) clearInterval(timerInterval);
-    }
-
-    socket.on('ranking:update', (ranking) => renderRanking(ranking));
-    socket.on('round:revealed', ({ ranking }) => renderRanking(ranking));
-    socket.on('round:delayed_revealed', ({ narration, ranking }) => {
-      document.getElementById('scenario').textContent = narration;
-      renderRanking(ranking);
-    });
-    socket.on('game:finished', ({ ranking }) => {
-      document.getElementById('round-title').textContent = '🏆 Resultado final';
-      document.getElementById('timer').textContent = '';
-      renderRanking(ranking, true);
-    });
-
-    function toggleRankingVisibility(roundId) {
-      const hide = roundId >= HIDE_RANKING_FROM_ROUND;
-      document.querySelector('table').style.display = hide ? 'none' : 'table';
-      document.getElementById('hidden-ranking').style.display = hide ? 'block' : 'none';
-    }
-
-    function renderRanking(list, forceShow) {
-      if (forceShow) {
-        document.querySelector('table').style.display = 'table';
-        document.getElementById('hidden-ranking').style.display = 'none';
+    const countdown = new Countdown((ms, frac) => {
+      const clock = document.getElementById('clock');
+      const bar = document.getElementById('timebar');
+      const running = view && view.timer;
+      if (!running) {
+        clock.textContent = '';
+        bar.classList.remove('on');
+        return;
       }
-      const body = document.getElementById('ranking-body');
-      body.innerHTML = '';
-      list.forEach((t, i) => {
-        const tr = document.createElement('tr');
-        if (i === 0) tr.className = 'rank-1';
-        tr.innerHTML = `<td>${t.name}</td><td>R$ ${t.valuation.toLocaleString('pt-BR')}</td>`;
-        body.appendChild(tr);
+      const low = ms <= 10000;
+      clock.replaceChildren(String(Math.ceil(ms / 1000)), el('small', {}, 's'));
+      clock.classList.toggle('low', low && ms > 0);
+      bar.classList.add('on');
+      bar.classList.toggle('low', low);
+      document.getElementById('timebar-fill').style.width = `${Math.max(0, Math.min(1, frac)) * 100}%`;
+    });
+
+    socket.on('connect', () => {
+      document.getElementById('conn').classList.remove('show');
+      socket.emit('projector:watch', {}, () => {});
+    });
+    socket.on('disconnect', () => document.getElementById('conn').classList.add('show'));
+    socket.on('state', (v) => {
+      view = v;
+      render();
+    });
+
+    function toggleFullscreen() {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(() => {});
+    }
+    document.getElementById('fs').addEventListener('click', toggleFullscreen);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+    });
+
+    function render() {
+      if (!view.timer) countdown.stop();
+      countdown.set(view.timer);
+      countdown.tick();
+      updateCounters();
+      // Só reconstrói a tela quando o conteúdo muda; contadores e timer
+      // atualizam no lugar, sem piscar a cada resposta.
+      const sig = JSON.stringify({ ...view, timer: null, answeredCount: null, betCount: null });
+      if (sig === lastSig) return;
+      lastSig = sig;
+      const screens = { lobby: lobby, bet: bet, question: question, closed: question, twist: twist, reveal: reveal, final: finalScreen };
+      const node = (screens[view.phase] || lobby)();
+      node.classList.add('fade');
+      main.replaceChildren(node);
+      updateCounters();
+      fit();
+    }
+
+    // Projetores variam (1024x768, 1280x800, 1920x1080) e o texto das
+    // rodadas também. Se algo não couber, diminui a fonte até caber.
+    function fit() {
+      const root = document.documentElement;
+      root.style.fontSize = '';
+      let size = parseFloat(getComputedStyle(root).fontSize);
+      const overflowing = () =>
+        [...main.querySelectorAll('[data-fit]')].some((n) => n.scrollHeight > n.clientHeight + 2);
+      for (let i = 0; i < 14 && overflowing(); i += 1) {
+        size *= 0.94;
+        root.style.fontSize = `${size}px`;
+      }
+    }
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(fit, 150);
+    });
+
+    function updateCounters() {
+      const answered = document.getElementById('answered');
+      if (answered) {
+        const n = view.phase === 'bet' ? view.betCount : view.answeredCount;
+        answered.textContent = `${n} de ${view.teamCount} times ${view.phase === 'bet' ? 'apostaram' : 'responderam'}`;
+        const fill = document.getElementById('answered-fill');
+        if (fill) fill.style.width = `${view.teamCount ? (n / view.teamCount) * 100 : 0}%`;
+      }
+    }
+
+    function roundTag() {
+      const r = view.round;
+      return el(
+        'div',
+        { class: 'round-tag' },
+        `Rodada ${r.number} de ${r.total} · ${r.moment}`,
+        el('span', { class: `pill ${r.difficulty}` }, r.difficultyLabel)
+      );
+    }
+
+    function counterFooter(extra) {
+      return el(
+        'div',
+        { class: 'footer' },
+        extra || el('span', { id: 'answered' }),
+        extra ? null : el('div', { class: 'progress' }, el('div', { id: 'answered-fill', style: 'width:0' }))
+      );
+    }
+
+    function lobby() {
+      const teams = view.teams || [];
+      return el(
+        'section',
+        { class: 'lobby' },
+        el(
+          'div',
+          { class: 'lobby-text', 'data-fit': true },
+          el('h1', {}, 'Startup Creation'),
+          el('p', { class: 'lead' }, 'Vocês são o time técnico da Bora.ai, a plataforma de ingressos para shows e festivais.'),
+          el(
+            'ol',
+            { class: 'steps' },
+            el('li', {}, el('b', {}, '1'), 'Juntem-se em times de 2 a 4 pessoas.'),
+            el('li', {}, el('b', {}, '2'), 'Um celular por time: escaneiem o QR code.'),
+            el('li', {}, el('b', {}, '3'), 'Digitem o nome do time e aguardem.')
+          ),
+          el('div', { class: 'teams-head' }, `Times conectados: ${teams.length}`),
+          el(
+            'div',
+            { class: 'chips' },
+            teams.length ? teams.map((n) => el('span', { class: 'chip' }, n)) : el('span', { class: 'muted' }, 'Aguardando o primeiro time…')
+          )
+        ),
+        el(
+          'div',
+          { class: 'qr' },
+          el('img', { src: '/join-qr.svg', alt: `QR code para ${view.joinUrl}` }),
+          el('div', { class: 'url' }, (view.joinUrl || '').replace(/^https?:\/\//, '').replace(/\/$/, ''))
+        )
+      );
+    }
+
+    function bet() {
+      return el(
+        'section',
+        { class: 'center-stage', 'data-fit': true },
+        el('div', { class: 'icon' }, '🎲'),
+        roundTag(),
+        el('h1', {}, 'Aposta final'),
+        el('p', {}, view.round.narration),
+        el(
+          'div',
+          { class: 'rules' },
+          el('div', { class: 'tier-best' }, 'Melhor opção: dobra a aposta'),
+          el('div', { class: 'tier-mid' }, 'Mediana: perde metade'),
+          el('div', { class: 'tier-worst' }, 'Pior: perde tudo')
+        ),
+        el('p', { class: 'muted', id: 'answered', style: 'margin-top:1rem' })
+      );
+    }
+
+    function question() {
+      const closed = view.phase === 'closed';
+      return el(
+        'section',
+        { style: 'display:flex;flex-direction:column;flex:1;min-height:0', 'data-fit': true },
+        roundTag(),
+        el('h1', {}, view.round.title),
+        el('p', { class: 'narration' }, view.round.narration),
+        el('p', { class: 'scenario' }, view.round.scenario),
+        el('div', { class: 'opts' }, view.options.map((o) => el('div', { class: 'opt' }, o.label))),
+        closed
+          ? el(
+              'div',
+              { class: 'footer' },
+              el('span', { style: 'color:var(--accent)' }, '⏱️ Tempo esgotado · respostas travadas'),
+              el('span', { id: 'answered', style: 'margin-left:auto' })
+            )
+          : counterFooter()
+      );
+    }
+
+    function twist() {
+      return el(
+        'section',
+        { class: 'center-stage twist-stage', 'data-fit': true },
+        el('div', { class: 'icon' }, '⚠️'),
+        roundTag(),
+        el('h1', {}, view.twist.title),
+        el('p', {}, view.twist.narration)
+      );
+    }
+
+    function reveal() {
+      const rv = view.reveal;
+      const total = Object.values(rv.distribution).reduce((a, b) => a + b, 0) || 1;
+      const opts = view.options.map((o) => {
+        const n = rv.distribution[o.id] || 0;
+        const best = o.id === rv.bestOptionId;
+        return el(
+          'div',
+          { class: `ropt${best ? ' best' : ''}` },
+          el(
+            'div',
+            { class: 'row' },
+            el('span', {}, best ? '✅' : '✖️'),
+            el('span', {}, o.label),
+            el('span', { class: 'count' }, `${n} ${n === 1 ? 'time' : 'times'}`)
+          ),
+          el('p', { class: 'txt' }, rv.optionTexts[o.id]),
+          el('div', { class: 'fill' }, el('div', { style: `width:${(n / total) * 100}%` }))
+        );
       });
+
+      const extras = [];
+      if (rv.noAnswer) extras.push(`${rv.noAnswer} sem resposta (contam como a pior)`);
+      if (rv.speedBonusCount) extras.push(`⚡ ${rv.speedBonusCount} com bônus de velocidade`);
+
+      const left = el(
+        'div',
+        { style: 'min-height:0;overflow:hidden', 'data-fit': true },
+        roundTag(),
+        el('h1', {}, view.round.title),
+        el('div', { class: 'ropts' }, opts),
+        el('div', { class: 'explain' }, `💡 ${rv.explanation}`),
+        rv.event
+          ? el(
+              'div',
+              { class: 'event' },
+              `📰 ${rv.event.label} `,
+              el('span', { style: 'color:var(--accent)' }, rv.event.teamName),
+              ': ',
+              el('span', { class: `pct ${rv.event.pct > 0 ? 'up' : 'down'}` }, fmtPct(rv.event.pct))
+            )
+          : null,
+        extras.length ? el('p', { class: 'muted', style: 'margin:0.7rem 0 0;font-size:1.05rem' }, extras.join(' · ')) : null
+      );
+      return el('section', { class: 'reveal' }, left, rankingPanel());
+    }
+
+    function rankingPanel() {
+      if (!view.rankingVisible) {
+        return el(
+          'aside',
+          { class: 'side' },
+          el(
+            'div',
+            { class: 'locked' },
+            el('div', { class: 'icon' }, '🔒'),
+            el('h2', {}, 'Ranking em suspense'),
+            el('p', {}, 'Nas últimas rodadas o placar fica escondido. Tudo se revela no final.')
+          )
+        );
+      }
+      // Top 12 no telão; cada time vê a própria posição no celular.
+      const list = view.ranking.slice(0, 12);
+      return el(
+        'aside',
+        { class: 'side', 'data-fit': true },
+        el('h2', {}, 'Valuation'),
+        el(
+          'ol',
+          { class: 'ranking' },
+          list.map((t) =>
+            el(
+              'li',
+              { class: t.position === 1 ? 'first' : '' },
+              el('span', { class: 'pos' }, ordinal(t.position)),
+              el('span', { class: 'nm' }, t.name),
+              el('span', { class: 'v' }, fmtShort(t.valuation))
+            )
+          )
+        ),
+        view.ranking.length > list.length ? el('p', { class: 'muted' }, `+${view.ranking.length - list.length} times`) : null
+      );
+    }
+
+    function finalScreen() {
+      const all = view.final;
+      if (!all.length) return el('div', { class: 'waiting' }, 'Fim de jogo.');
+      const [win, ...rest] = all;
+      const shown = rest.slice(0, 30);
+      // Revela de baixo para cima e o vencedor por último.
+      const step = Math.min(0.25, 4 / Math.max(1, shown.length));
+      const items = shown.map((t, i) =>
+        el(
+          'li',
+          { style: `animation-delay:${((shown.length - 1 - i) * step).toFixed(2)}s` },
+          el('span', { class: 'pos' }, ordinal(t.position)),
+          el('span', { class: 'nm' }, t.name),
+          el('span', { class: 'tier' }, `${t.tier.emoji} ${t.tier.name}`),
+          el('span', { class: 'v' }, fmtShort(t.valuation))
+        )
+      );
+      const winnerDelay = (shown.length * step + 0.4).toFixed(2);
+      return el(
+        'section',
+        { style: 'display:flex;flex-direction:column;flex:1;min-height:0', 'data-fit': true },
+        el('h1', { style: 'margin-bottom:1rem' }, '🏆 Resultado final'),
+        el(
+          'div',
+          { class: 'final' },
+          el(
+            'div',
+            { class: 'winner', style: `animation-delay:${winnerDelay}s` },
+            el('div', { class: 'trophy' }, '🏆'),
+            el('div', { class: 'wname' }, win.name),
+            el('div', { class: 'wval' }, fmtBRL(win.valuation)),
+            el('div', { class: 'wtier' }, `${win.tier.emoji} ${win.tier.name}`),
+            el('div', { class: 'wmsg' }, win.tier.message),
+            view.prize ? el('div', { class: 'muted', style: 'font-size:1.1rem;margin-top:0.6rem' }, view.prize) : null
+          ),
+          el(
+            'aside',
+            { class: 'side', 'data-fit': true },
+            el('h2', {}, 'Classificação'),
+            el('ol', { class: `ranking standings${shown.length > 12 ? ' two' : ''}` }, items),
+            rest.length > shown.length ? el('p', { class: 'muted' }, `+${rest.length - shown.length} times`) : null
+          )
+        )
+      );
     }
   </script>
 </body>
