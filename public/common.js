@@ -139,5 +139,29 @@
     },
   };
 
-  window.Bora = { fmtBRL, fmtShort, fmtMult, fmtPct, ordinal, el, Countdown, reasonText, request, storage };
+  // Versão do protocolo entre as telas e o servidor (a mesma de server.js).
+  // Se o servidor não confirmar esta versão logo depois de conectar, ele está
+  // rodando código antigo (processo não reiniciado depois do deploy): a tela
+  // avisa em vez de ficar em branco.
+  const PROTOCOL = 2;
+
+  function watchServer(socket, message) {
+    const banner = document.createElement('div');
+    banner.className = 'conn-banner stale';
+    banner.setAttribute('role', 'alert');
+    banner.textContent = message;
+    document.body.append(banner);
+    let timer = null;
+    socket.on('connect', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => banner.classList.add('show'), 4000);
+    });
+    socket.on('disconnect', () => clearTimeout(timer));
+    socket.on('server:hello', (hello) => {
+      clearTimeout(timer);
+      banner.classList.toggle('show', !hello || hello.protocol !== PROTOCOL);
+    });
+  }
+
+  window.Bora = { fmtBRL, fmtShort, fmtMult, fmtPct, ordinal, el, Countdown, reasonText, request, storage, watchServer };
 })();

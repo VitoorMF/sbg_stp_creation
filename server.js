@@ -12,6 +12,10 @@ const express = require('express');
 const QRCode = require('qrcode');
 const { Server } = require('socket.io');
 const { Game, GameError } = require('./gameEngine');
+
+// Versão do protocolo com as telas (a mesma de public/common.js). Uma tela que
+// não recebe esta versão ao conectar avisa que o servidor está desatualizado.
+const PROTOCOL = 2;
 const { ROUNDS, validateRounds } = require('./rounds');
 const DEFAULT_CONFIG = require('./config');
 
@@ -123,7 +127,9 @@ function createServer({
   const page = (file) => (req, res) => res.sendFile(path.join(__dirname, 'public', file));
   app.get(['/admin', '/operador'], page('admin.html'));
   app.get(['/telao', '/projetor', '/projector'], page('projector.html'));
-  app.get('/healthz', (req, res) => res.json({ ok: true, phase: game.phase, teams: Object.keys(game.state.teams).length }));
+  app.get('/healthz', (req, res) =>
+    res.json({ ok: true, protocol: PROTOCOL, phase: game.phase, teams: Object.keys(game.state.teams).length })
+  );
   app.get('/join-qr.svg', async (req, res) => {
     try {
       const url = joinUrlFor(publicUrl, req.get('host'), port);
@@ -248,6 +254,7 @@ function createServer({
   const isAdmin = (socket) => socket.data.role === 'admin';
 
   io.on('connection', (socket) => {
+    socket.emit('server:hello', { protocol: PROTOCOL });
     socket.data.joinAttempts = 0;
     socket.data.joinUrl = joinUrlFor(publicUrl, socket.handshake.headers.host, port);
 
@@ -398,7 +405,7 @@ function createServer({
   };
 }
 
-module.exports = { createServer, joinUrlFor };
+module.exports = { createServer, joinUrlFor, PROTOCOL };
 
 if (require.main === module) {
   const port = Number(process.env.PORT) || 3002;

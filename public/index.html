@@ -346,6 +346,7 @@
     const TOKEN_KEY = 'bora.teamToken';
     const app = document.getElementById('app');
     const socket = io({ reconnectionDelayMax: 3000 });
+    window.Bora.watchServer(socket, 'O servidor do jogo está desatualizado. Avisem o operador.');
 
     let token = storage.get(TOKEN_KEY);
     let view = null;
@@ -379,6 +380,9 @@
     socket.on('state', (v) => {
       const prev = view;
       view = v;
+      // O fim do timer e do bônus só é recalculado quando chega estado novo do
+      // servidor. Redesenhar a tela (ex.: ao trocar de alternativa) não mexe nele.
+      countdown.set(v.timer);
       bonusEndsAt = v.speedBonusRemainingMs !== undefined ? performance.now() + v.speedBonusRemainingMs : null;
       if (!prev || prev.phase !== v.phase) actionError = '';
       if (prev && prev.phase !== v.phase && v.phase === 'question' && navigator.vibrate) navigator.vibrate(120);
@@ -428,10 +432,7 @@
       // Outros times respondendo geram novos estados; só redesenha se algo
       // mudou para este time, senão um toque no meio do redesenho se perde.
       const sig = JSON.stringify([{ ...view, timer: null, speedBonusRemainingMs: null }, selected, sending, actionError]);
-      if (sig === lastSig) {
-        countdown.set(view.timer);
-        return;
-      }
+      if (sig === lastSig) return;
       lastSig = sig;
       document.getElementById('tb-name').textContent = view.team.name;
       document.getElementById('tb-val').textContent = fmtBRL(view.team.valuation);
@@ -453,7 +454,7 @@
         window.scrollTo(0, 0);
         lastScreenKey = key;
       }
-      countdown.set(view.timer);
+      countdown.tick(); // preenche o timer recém-desenhado sem esperar o próximo tique
     }
 
     function renderJoin() {
@@ -486,6 +487,10 @@
             button.disabled = false;
             if (!res.ok) {
               error.textContent = reasonText(res.reason);
+              return;
+            }
+            if (!res.token) {
+              error.textContent = 'O servidor do jogo está desatualizado. Avisem o operador.';
               return;
             }
             token = res.token;

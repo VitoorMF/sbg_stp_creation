@@ -90,6 +90,21 @@ pm2 save && pm2 startup   # volta sozinho se a instância reiniciar
 - **Queda do processo:** o pm2 reinicia sozinho. O estado é gravado em `data/state.json` a cada mudança (inclusive a cada resposta) e volta no reinício, e os celulares reconectam ao mesmo time sozinhos.
 - **Jogo novo:** "Apagar tudo" no admin, ou pare o processo e apague `data/state.json`.
 
+### Atualizar uma instalação que já está rodando
+
+O Node carrega o código só quando o processo sobe. Copiar os arquivos novos atualiza as telas na hora, mas o servidor continua com o código antigo até reiniciar. Nesse caso as telas mostram uma faixa laranja: "O servidor está rodando o código antigo do jogo".
+
+```bash
+# na instância, dentro da pasta do jogo, com todos os arquivos novos copiados
+# (tudo menos node_modules/ e data/)
+npm install                  # dependências novas, como o qrcode
+pm2 ls                       # veja o nome do processo do jogo
+pm2 restart startup-creation # ou: pm2 delete <processo antigo> e o pm2 start acima
+curl localhost:3002/healthz  # precisa responder {"ok":true,"protocol":2,...}
+```
+
+Se a instância também roda o King of the Server, não use `pm2 delete all`. Se o jogo antigo foi iniciado com `node server.js` fora do pm2, ache o PID dele com `sudo lsof -i :3002` e pare com `kill <PID>`. Não use `pkill node`, que derruba o King of the Server junto.
+
 ## Checklist antes do evento
 
 - [ ] `ADMIN_PASSWORD` definido e anotado com o operador
@@ -105,4 +120,4 @@ pm2 save && pm2 startup   # volta sozinho se a instância reiniciar
 npm test
 ```
 
-São 36 testes. Cobrem a engine (pontuação, bônus, aposta, crise, eventos, faixas, ranking escondido, nada vazando antes da revelação, persistência) e o servidor por socket (entrada, reconexão, clique duplo, timer, remoção de time, payload malformado, reinício com estado salvo).
+São 37 testes. Cobrem a engine (pontuação, bônus, aposta, crise, eventos, faixas, ranking escondido, nada vazando antes da revelação, persistência) e o servidor por socket (entrada, reconexão, clique duplo, timer, remoção de time, payload malformado, reinício com estado salvo).

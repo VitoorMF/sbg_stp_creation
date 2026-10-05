@@ -122,6 +122,17 @@ button:disabled {
   transform: translateY(0);
 }
 
+.conn-banner.stale {
+  top: auto;
+  bottom: 0;
+  background: #b45309;
+  transform: translateY(100%);
+}
+
+.conn-banner.stale.show {
+  transform: translateY(0);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

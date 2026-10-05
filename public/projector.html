@@ -672,6 +672,7 @@
     const { el, fmtBRL, fmtShort, fmtPct, ordinal, Countdown } = window.Bora;
     const main = document.getElementById('main');
     const socket = io({ reconnectionDelayMax: 3000 });
+    window.Bora.watchServer(socket, 'O servidor está rodando o código antigo do jogo. Atualize os arquivos, rode npm install e reinicie o processo (pm2 restart startup-creation).');
     let view = null;
     let lastSig = '';
 

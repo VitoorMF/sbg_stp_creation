@@ -454,3 +454,22 @@ test('rounds.js editado com jogo salvo não derruba a revelação', () => {
   restored.advance();
   assert.equal(restored.viewForTeam(a.id).result.auto, true);
 });
+
+test('telão embaralha as opções e nunca usa a ordem do rounds.js (melhor primeiro)', () => {
+  for (const r of [0, 0.42, 0.99]) {
+    const { game, clock } = setup({ random: () => r });
+    const a = game.join('A');
+    game.advance();
+    for (let i = 0; i < 8; i += 1) {
+      const round = game.currentRound;
+      const canonical = round.options.map((o) => o.id);
+      const shown = game.viewForProjector().options.map((o) => o.id);
+      assert.notDeepEqual(shown, canonical, `rodada ${i + 1} com random ${r}`);
+      assert.deepEqual([...shown].sort(), [...canonical].sort());
+      assert.deepEqual(game.viewForProjector().options.map((o) => o.id), shown, 'ordem estável');
+      playRound(game, clock, { [a.id]: 'best' });
+      assert.deepEqual(game.viewForProjector().options.map((o) => o.id), shown, 'mesma ordem na revelação');
+      game.advance();
+    }
+  }
+});

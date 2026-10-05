@@ -4,7 +4,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { io: connect } = require('socket.io-client');
-const { createServer, joinUrlFor } = require('../server');
+const { createServer, joinUrlFor, PROTOCOL } = require('../server');
 const config = require('../config');
 
 const quiet = { log() {}, warn() {}, error() {} };
@@ -200,6 +200,19 @@ test('senha do admin gerada é gravada e reaproveitada', async (t) => {
   assert.equal(a.adminPassword, b.adminPassword);
   await a.close();
   await b.close();
+});
+
+test('servidor anuncia a versão do protocolo, a mesma das telas', async (t) => {
+  const { client, port, stop } = await start();
+  t.after(stop);
+  const s = client();
+  const hello = await new Promise((resolve) => s.once('server:hello', resolve));
+  const clientSrc = fs.readFileSync(path.join(__dirname, '..', 'public', 'common.js'), 'utf8');
+  const clientProtocol = Number(/const PROTOCOL = (\d+);/.exec(clientSrc)[1]);
+  assert.equal(hello.protocol, PROTOCOL);
+  assert.equal(clientProtocol, PROTOCOL, 'public/common.js e server.js com versões diferentes');
+  const health = await (await fetch(`http://localhost:${port}/healthz`)).json();
+  assert.equal(health.protocol, PROTOCOL);
 });
 
 test('QR code e atalhos de página respondem', async (t) => {

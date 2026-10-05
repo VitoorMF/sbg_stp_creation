@@ -192,6 +192,15 @@ class Game {
     return ids;
   }
 
+  // Ordem do telão: embaralhada, e nunca a do rounds.js, onde a melhor opção
+  // vem sempre primeiro (o telão entregaria a resposta).
+  _projectorOrder(round) {
+    const canonical = round.options.map((o) => o.id);
+    const ids = this._shuffledIds(round);
+    if (ids.every((id, i) => id === canonical[i])) ids.push(ids.shift());
+    return ids;
+  }
+
   // Ação principal do operador. `expect` evita que um clique duplo pule etapas:
   // se o jogo já mudou de fase, a ação é recusada.
   advance(expect) {
@@ -256,6 +265,7 @@ class Game {
       event: null,
     };
     for (const id of Object.keys(this.state.teams)) rs.orders[id] = this._shuffledIds(round);
+    rs.projectorOrder = this._projectorOrder(round);
     this.state.rounds[index] = rs;
     this.state.roundIndex = index;
 
@@ -638,7 +648,13 @@ class Game {
 
     const withQuestion = phase !== PHASE.BET;
     view.round = this._publicRound({ withQuestion });
-    if (withQuestion) view.options = round.options.map((o) => ({ id: o.id, label: o.label }));
+    if (withQuestion) {
+      const byId = Object.fromEntries(round.options.map((o) => [o.id, o]));
+      const saved = rs.projectorOrder;
+      const order =
+        saved && saved.length === round.options.length && saved.every((id) => byId[id]) ? saved : this._projectorOrder(round);
+      view.options = order.map((id) => ({ id, label: byId[id].label }));
+    }
     view.answeredCount = Object.keys(rs.answers).length;
     view.betCount = Object.keys(rs.bets).length;
 
