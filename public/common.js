@@ -31,6 +31,21 @@
     return `${n}º`;
   }
 
+  // "Empate em R$ 6,72 mi com Time B: venceu quem respondeu mais rápido no
+  // total (4,3 s de diferença)."
+  function tieText(tb) {
+    const others = tb.tiedCount > 2 ? `${tb.runnerUpName} e mais ${tb.tiedCount - 2}` : tb.runnerUpName;
+    let how;
+    if (tb.marginMs >= 100) {
+      how = `respondeu ${dec.format(Math.round(tb.marginMs / 100) / 10)} s mais rápido somando todas as rodadas`;
+    } else if (tb.marginMs > 0) {
+      how = 'respondeu mais rápido somando todas as rodadas (menos de 0,1 s de diferença)';
+    } else {
+      how = 'entrou primeiro no jogo (o tempo total de resposta também empatou)';
+    }
+    return `⚖️ Empate em ${fmtShort(tb.valuation)} com ${others}. ${tb.winnerName} venceu porque ${how}.`;
+  }
+
   // el('div', { class: 'x', onclick: fn }, 'texto', outroEl)
   function el(tag, attrs, ...children) {
     const node = document.createElement(tag);
@@ -163,5 +178,5 @@
     });
   }
 
-  window.Bora = { fmtBRL, fmtShort, fmtMult, fmtPct, ordinal, el, Countdown, reasonText, request, storage, watchServer };
+  window.Bora = { fmtBRL, fmtShort, fmtMult, fmtPct, ordinal, tieText, el, Countdown, reasonText, request, storage, watchServer };
 })();

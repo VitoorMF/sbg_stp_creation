@@ -831,7 +831,8 @@
           { class: 'card center' },
           won
             ? el('h2', { style: 'margin:0' }, '🏆 Vocês venceram!')
-            : el('p', { style: 'margin:0' }, '🏆 Vencedor: ', el('b', {}, f.winnerName))
+            : el('p', { style: 'margin:0' }, '🏆 Vencedor: ', el('b', {}, f.winnerName)),
+          f.tieBreak ? el('p', { class: 'muted', style: 'margin:10px 0 0;font-size:14px' }, window.Bora.tieText(f.tieBreak)) : null
         ),
         el('p', { class: 'muted center' }, 'Obrigado por jogar!'),
       ];

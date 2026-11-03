@@ -473,3 +473,50 @@ test('telão embaralha as opções e nunca usa a ordem do rounds.js (melhor prim
     }
   }
 });
+
+test('empate no 1º lugar: desempate por tempo total e explicação nas telas', () => {
+  const { game, clock } = setup();
+  const lento = game.join('Lento');
+  const rapido = game.join('Rápido');
+  game.join('Terceiro');
+  game.advance();
+  for (let i = 0; i < 9; i += 1) {
+    const round = game.currentRound;
+    if (game.phase === PHASE.BET) {
+      game.submitBet(lento.id, 1);
+      game.submitBet(rapido.id, 1);
+      game.advance();
+    }
+    const best = tierId(round, 'best');
+    clock.advance(10000);
+    game.submitAnswer(rapido.id, best);
+    clock.advance(2000); // os dois dentro do bônus, o Lento 2 s depois
+    game.submitAnswer(lento.id, best);
+    game.advance();
+    if (round.twist) game.advance();
+    game.advance();
+    game.advance();
+  }
+  assert.equal(game.phase, PHASE.FINAL);
+  assert.equal(game.getTeam(lento.id).valuation, game.getTeam(rapido.id).valuation);
+  const tb = game.viewForProjector().tieBreak;
+  assert.equal(tb.winnerName, 'Rápido');
+  assert.equal(tb.runnerUpName, 'Lento');
+  assert.equal(tb.tiedCount, 2);
+  assert.equal(tb.marginMs, 9 * 2000);
+  assert.deepEqual(game.viewForTeam(lento.id).final.tieBreak, tb);
+  assert.equal(game.viewForTeam(lento.id).final.position, 2);
+  assert.deepEqual(game.viewForAdmin().tieBreak, tb);
+});
+
+test('sem empate no 1º lugar, nada de explicação', () => {
+  const { game, clock } = setup();
+  const a = game.join('A');
+  const b = game.join('B');
+  game.advance();
+  for (let i = 0; i < 9; i += 1) {
+    playRound(game, clock, { [a.id]: 'best', [b.id]: 'mid' }, { bets: { [a.id]: 0.5, [b.id]: 0.5 } });
+    game.advance();
+  }
+  assert.equal(game.viewForProjector().tieBreak, null);
+});

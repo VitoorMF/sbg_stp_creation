@@ -490,6 +490,7 @@
       } else if (view.phase === 'final') {
         what = 'Jogo encerrado';
         sub = view.teams[0] ? `Vencedor: ${view.teams[0].name}` : '';
+        if (view.tieBreak) sub += ` · ${window.Bora.tieText(view.tieBreak)}`;
       } else if (r) {
         what = `Rodada ${r.number}/${r.total} · ${r.moment} · ${r.title}`;
         if (view.phase === 'bet') sub = `${r.betCount}/${view.teams.length} apostaram`;

@@ -63,7 +63,7 @@ Todas podem ser trocadas em `config.js`:
 - O bônus de velocidade vale **só para a melhor opção** (`SPEED_BONUS_ONLY_BEST`), para não premiar chute rápido. Não há bônus na aposta.
 - Na aposta, a **opção mediana perde metade** do valor apostado (`STAKE_RETURN.mid`). O documento deixou essa célula vazia.
 - Time que **não aposta** a tempo aposta 50% (`DEFAULT_BET_FRACTION`).
-- **Desempate** no valuation: vence quem respondeu mais rápido somando todas as rodadas.
+- **Desempate** no valuation: vence quem respondeu mais rápido somando todas as rodadas. Quando isso decide o 1º lugar, o telão, os celulares e o admin mostram o empate e a diferença de tempo. Dois times que acertam tudo, respondem rápido e apostam 100% empatam com frequência: em 17% a 44% das partidas na simulação, quando nenhum dos dois é sorteado num evento.
 - **Times que entram atrasados** começam com R$ 100 mil. Se entram depois que a rodada fechou, essa rodada não conta para eles.
 - O texto do prêmio no telão (`PRIZE_TEXT`) diz "Ganhou os AWS Credits!". Troque se os créditos não forem confirmados.
 

@@ -466,6 +466,20 @@ class Game {
     return this.ranking().map((r) => ({ ...r, tier: this.tierFor(this.state.teams[r.id]) }));
   }
 
+  // Empate no valuation do 1º lugar: quem ficou com a vitória e com quanto
+  // tempo de vantagem, para as telas explicarem o desempate.
+  tieBreak() {
+    const [first, second] = this.ranking().map((r) => this.state.teams[r.id]);
+    if (!second || first.valuation !== second.valuation) return null;
+    return {
+      valuation: first.valuation,
+      tiedCount: Object.values(this.state.teams).filter((t) => t.valuation === first.valuation).length,
+      winnerName: first.name,
+      runnerUpName: second.name,
+      marginMs: second.totalAnswerMs - first.totalAnswerMs,
+    };
+  }
+
   // --- O que cada tela vê --------------------------------------------------
   // Nada de faixa, multiplicador ou resposta certa sai do servidor antes da
   // revelação, e o ranking não sai nas rodadas em suspense.
@@ -553,6 +567,7 @@ class Game {
         teamCount: ranking.length,
         tier: this.tierFor(team),
         winnerName: ranking[0].name,
+        tieBreak: this.tieBreak(),
       };
       return view;
     }
@@ -642,6 +657,7 @@ class Game {
     }
     if (phase === PHASE.FINAL) {
       view.final = this.finalStandings();
+      view.tieBreak = this.tieBreak();
       view.prize = this.config.PRIZE_TEXT || '';
       return view;
     }
@@ -705,6 +721,7 @@ class Game {
       }),
       log: this.state.log.slice(-60),
     };
+    if (phase === PHASE.FINAL) view.tieBreak = this.tieBreak();
 
     if (round && phase !== PHASE.FINAL) {
       const mult = this.config.MULTIPLIERS[round.difficulty];
