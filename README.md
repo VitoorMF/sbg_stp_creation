@@ -45,6 +45,10 @@ O painel "Roteiro" do admin traz a narração, o cenário, as três opções com
 
 O admin também pode **renomear** ou **remover** times. Um time removido volta para a tela de entrada no celular.
 
+**Time trocou de celular** (bateria acabou, navegador fechado, outra pessoa assumiu): no celular novo, o nome antigo dá "Já existe um time com esse nome". No admin, clique em **Reentrada** na linha do time e peça para o time entrar de novo digitando o mesmo nome. Ele volta com o placar e com a resposta da rodada, se já tiver respondido. Enquanto ninguém entra, o botão mostra "Aguardando reentrada… (cancelar)".
+
+**"Apagar tudo" ou "Zerar placar" por engano:** antes de zerar, o servidor grava uma cópia do jogo em `data/state-antes-de-zerar-<data>.json`. Para voltar, pare o processo (`pm2 stop startup-creation`), copie esse arquivo por cima de `data/state.json` e suba de novo (`pm2 start startup-creation`).
+
 ## Regras implementadas
 
 - Valuation inicial de R$ 100 mil. Os multiplicadores por dificuldade e as faixas finais seguem o documento de design (`config.js`).
@@ -89,7 +93,7 @@ sudo npm install -g pm2
 ADMIN_PASSWORD='troque-isto' pm2 start ecosystem.config.js
 pm2 save
 pm2 startup                  # imprime um comando "sudo env ...": rode-o para o jogo voltar se a instância reiniciar
-curl localhost:3002/healthz  # precisa responder {"ok":true,"protocol":2,...}
+curl localhost:3002/healthz  # precisa responder {"ok":true,"protocol":3,...}
 ```
 
 - **Security group:** liberar a porta 3002 (TCP) para `0.0.0.0/0`.
@@ -117,7 +121,7 @@ curl localhost:3002/healthz
 ## Checklist antes do evento
 
 - [ ] `ADMIN_PASSWORD` definido e anotado com o operador
-- [ ] Instância rodando desde antes da aula, `curl http://<ip>:3002/healthz` respondendo com `"protocol":2`
+- [ ] Instância rodando desde antes da aula, `curl http://<ip>:3002/healthz` respondendo com `"protocol":3`
 - [ ] Telão aberto pelo IP público e QR code testado com um celular no 4G e um no Wi-Fi da sala
 - [ ] Ensaio completo com `npm run bots -- 25 http://<ip>:3002`, depois "Apagar tudo"
 - [ ] Teste com alguém de fora do core team, e depois rodar `npm run simulate` para ajustar `config.js`

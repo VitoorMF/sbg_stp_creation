@@ -15,7 +15,7 @@ const { Game, GameError } = require('./gameEngine');
 
 // Versão do protocolo com as telas (a mesma de public/common.js). Uma tela que
 // não recebe esta versão ao conectar avisa que o servidor está desatualizado.
-const PROTOCOL = 2;
+const PROTOCOL = 3;
 const { ROUNDS, validateRounds } = require('./rounds');
 const DEFAULT_CONFIG = require('./config');
 
@@ -193,23 +193,38 @@ function createServer({
     }
   }
 
+  // Roda fora de qualquer try (setImmediate): um erro aqui derrubaria o
+  // processo, e como o estado já foi gravado, o pm2 entraria em loop de queda.
+  // Cada tela vai num try próprio para um erro não deixar as outras sem estado.
+  function safely(what, fn) {
+    try {
+      fn();
+    } catch (err) {
+      logger.error(`Erro ao enviar estado (${what}):`, err);
+    }
+  }
+
   let broadcastScheduled = false;
   function broadcast() {
     broadcastScheduled = false;
     for (const [teamId] of teamSockets) {
-      io.to(`team:${teamId}`).emit('state', game.viewForTeam(teamId));
+      safely(`time ${teamId}`, () => io.to(`team:${teamId}`).emit('state', game.viewForTeam(teamId)));
     }
     // Projetor e admin recebem o joinUrl de cada um, então vão um a um.
-    const projector = game.viewForProjector();
-    for (const s of io.sockets.adapter.rooms.get('projector') || []) {
-      const sock = io.sockets.sockets.get(s);
-      if (sock) sock.emit('state', { ...projector, joinUrl: sock.data.joinUrl });
-    }
-    const adminView = game.viewForAdmin(connectionCounts());
-    for (const s of io.sockets.adapter.rooms.get('admin') || []) {
-      const sock = io.sockets.sockets.get(s);
-      if (sock) sock.emit('state', { ...adminView, joinUrl: sock.data.joinUrl });
-    }
+    safely('telão', () => {
+      const projector = game.viewForProjector();
+      for (const s of io.sockets.adapter.rooms.get('projector') || []) {
+        const sock = io.sockets.sockets.get(s);
+        if (sock) sock.emit('state', { ...projector, joinUrl: sock.data.joinUrl });
+      }
+    });
+    safely('admin', () => {
+      const adminView = game.viewForAdmin(connectionCounts());
+      for (const s of io.sockets.adapter.rooms.get('admin') || []) {
+        const sock = io.sockets.sockets.get(s);
+        if (sock) sock.emit('state', { ...adminView, joinUrl: sock.data.joinUrl });
+      }
+    });
   }
 
   function scheduleBroadcast() {
@@ -253,10 +268,35 @@ function createServer({
 
   const isAdmin = (socket) => socket.data.role === 'admin';
 
+  // "Apagar tudo" clicado por engano no meio da aula não tem desfazer: guarda
+  // uma cópia do jogo antes. Para voltar: pare o processo, copie o arquivo por
+  // cima de data/state.json e suba de novo.
+  function backupBeforeReset() {
+    if (!persist || !Object.keys(game.state.teams).length) return;
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const file = path.join(dataDir, `state-antes-de-zerar-${stamp}.json`);
+    try {
+      saveState(file, game.toJSON());
+      logger.log(`Cópia do jogo antes de zerar: ${file}`);
+    } catch (err) {
+      logger.error(`Falha ao gravar a cópia ${file}: ${err.message}`);
+    }
+  }
+
   io.on('connection', (socket) => {
     socket.emit('server:hello', { protocol: PROTOCOL });
     socket.data.joinAttempts = 0;
     socket.data.joinUrl = joinUrlFor(publicUrl, socket.handshake.headers.host, port);
+
+    // O celular manda o token já no handshake. Assim o socket nasce ligado ao
+    // time, e uma resposta confirmada durante a reconexão (que o cliente guarda
+    // e envia assim que conecta, antes do team:resume) não é recusada.
+    const handshakeTeam = game.resume(socket.handshake.auth && socket.handshake.auth.token);
+    if (handshakeTeam) {
+      socket.data.role = 'team';
+      attachTeam(socket, handshakeTeam.id);
+      scheduleBroadcast();
+    }
 
     // --- Time ---
     socket.on(
@@ -331,7 +371,7 @@ function createServer({
 
     socket.on(
       'admin:action',
-      handler(({ type, expect, teamId, name, seconds, keepTeams }) => {
+      handler(({ type, expect, teamId, name, seconds, keepTeams, open }) => {
         if (!isAdmin(socket)) throw new GameError('not_admin');
         switch (type) {
           case 'advance':
@@ -349,7 +389,11 @@ function createServer({
           case 'renameTeam':
             game.renameTeam(teamId, name);
             break;
+          case 'allowRejoin':
+            game.setRejoin(teamId, !!open);
+            break;
           case 'reset':
+            backupBeforeReset();
             game.reset({ keepTeams: !!keepTeams });
             break;
           default:

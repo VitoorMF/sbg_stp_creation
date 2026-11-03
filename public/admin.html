@@ -626,6 +626,23 @@
             el(
               'button',
               {
+                class: `btn ${t.rejoinOpen ? '' : 'ghost '}mini`,
+                type: 'button',
+                title: 'Para quando o time trocou de celular: a próxima entrada com este nome volta para este time, com o placar.',
+                onclick: () => {
+                  if (t.rejoinOpen) {
+                    action({ type: 'allowRejoin', teamId: t.id, open: false });
+                  } else if (confirm(`Liberar a reentrada de "${t.name}"?\n\nNo celular novo, o time digita exatamente "${t.name}" e volta com o placar. Use só se o time perdeu o celular ou fechou o navegador.`)) {
+                    action({ type: 'allowRejoin', teamId: t.id, open: true });
+                  }
+                },
+              },
+              t.rejoinOpen ? 'Aguardando reentrada… (cancelar)' : 'Reentrada'
+            ),
+            ' ',
+            el(
+              'button',
+              {
                 class: 'btn danger mini',
                 type: 'button',
                 onclick: () => {

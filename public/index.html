@@ -319,6 +319,17 @@
     animation: pop 0.35s ease-out;
   }
 
+  .btn.nudge {
+    animation: nudge 0.8s ease-in-out infinite;
+  }
+
+  @keyframes nudge {
+    50% {
+      transform: scale(1.04);
+      box-shadow: 0 0 0 6px rgba(250, 204, 21, 0.45);
+    }
+  }
+
   @keyframes pop {
     from {
       transform: scale(0.96);
@@ -345,10 +356,13 @@
     const { el, fmtBRL, fmtMult, fmtPct, ordinal, Countdown, reasonText, request, storage } = window.Bora;
     const TOKEN_KEY = 'bora.teamToken';
     const app = document.getElementById('app');
-    const socket = io({ reconnectionDelayMax: 3000 });
+    let token = storage.get(TOKEN_KEY);
+    // O token vai no handshake de cada (re)conexão: o servidor já liga o socket
+    // ao time antes de qualquer evento, inclusive a resposta que foi confirmada
+    // enquanto a rede estava caída.
+    const socket = io({ reconnectionDelayMax: 3000, auth: (cb) => cb({ token }) });
     window.Bora.watchServer(socket, 'O servidor do jogo está desatualizado. Avisem o operador.');
 
-    let token = storage.get(TOKEN_KEY);
     let view = null;
     let notice = '';
     let lastScreenKey = '';
@@ -409,8 +423,13 @@
         // sem suporte ou sem permissão: segue normal
       }
     }
+    // Celular que volta do bloqueio pode estar com a tela velha e um socket que
+    // ainda não percebeu que caiu: reconecta na hora ou pede o estado de novo.
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && token) keepAwake();
+      if (document.visibilityState !== 'visible' || !token) return;
+      keepAwake();
+      if (!socket.connected) socket.connect();
+      else request(socket, 'team:resume', { token }, 4000);
     });
 
     // --- Telas ------------------------------------------------------------
@@ -448,7 +467,8 @@
       };
       const nodes = (screens[view.phase] || renderLobby)();
       const key = `${view.phase}:${view.round ? view.round.number : ''}`;
-      app.replaceChildren(...nodes);
+      // replaceChildren escreveria "null" na tela para um bloco opcional ausente.
+      app.replaceChildren(...nodes.filter((n) => n !== null && n !== undefined && n !== false));
       if (key !== lastScreenKey) {
         app.firstElementChild && app.firstElementChild.classList.add('pop');
         window.scrollTo(0, 0);
@@ -543,6 +563,9 @@
       secs.textContent = `${Math.ceil(ms / 1000)}s`;
       document.getElementById('timer-bar').style.width = `${Math.max(0, Math.min(1, frac)) * 100}%`;
       document.getElementById('timer').classList.toggle('low', ms <= 10000);
+      // Escolheram e não confirmaram: o botão pisca nos últimos 10 s.
+      const confirmBtn = document.getElementById('confirm');
+      if (confirmBtn) confirmBtn.classList.toggle('nudge', ms <= 10000 && ms > 0 && !!selected.optionId && !sending);
       const bonus = document.getElementById('bonus');
       if (bonus && bonusEndsAt !== null) {
         const left = Math.ceil((bonusEndsAt - performance.now()) / 1000);
@@ -660,6 +683,7 @@
         : el(
             'button',
             {
+              id: 'confirm',
               class: 'btn full',
               disabled: !selected.optionId || sending,
               onclick: async () => {
@@ -687,6 +711,9 @@
         ),
         el('div', {}, options),
         confirm,
+        !answered && selected.optionId && !sending
+          ? el('p', { class: 'muted center', style: 'font-size:14px;margin:8px 0 0' }, 'Só escolher não vale: toquem em "Confirmar resposta".')
+          : null,
         el('p', { class: 'error', role: 'alert' }, actionError),
       ];
     }

@@ -18,7 +18,7 @@ const NAMES = [
 
 function bot(i) {
   const name = NAMES[i % NAMES.length] + (i >= NAMES.length ? ` ${Math.floor(i / NAMES.length) + 1}` : '');
-  const socket = io(url, { transports: ['websocket'], forceNew: true });
+  const socket = io(url, { transports: ['websocket'], forceNew: true, auth: (cb) => cb({ token }) });
   let token = null;
   let actedKey = null;
 

@@ -520,3 +520,42 @@ test('sem empate no 1º lugar, nada de explicação', () => {
   }
   assert.equal(game.viewForProjector().tieBreak, null);
 });
+
+test('reentrada liberada: mesmo nome em outro celular volta para o time com o placar', () => {
+  const { game, clock } = setup();
+  const a = game.join('Os Escaláveis');
+  game.advance();
+  clock.advance(5000);
+  game.submitAnswer(a.id, tierId(game.currentRound, 'best'));
+
+  assert.throws(() => game.join('os escalaveis'), { code: 'name_taken' }); // sem liberar, continua bloqueado
+  assert.throws(() => game.setRejoin('t99', true), { code: 'unknown_team' });
+  game.setRejoin(a.id, true);
+  assert.equal(game.viewForAdmin().teams[0].rejoinOpen, true);
+  const back = game.join('  OS ESCALÁVEIS ');
+  assert.equal(back.id, a.id);
+  assert.equal(back.token, a.token);
+  assert.equal(game.viewForTeam(back.id).myAnswer, tierId(game.currentRound, 'best'));
+  assert.equal(Object.keys(game.state.teams).length, 1);
+  // A liberação vale uma vez só.
+  assert.throws(() => game.join('Os Escaláveis'), { code: 'name_taken' });
+
+  // Cancelar a liberação.
+  game.setRejoin(a.id, true);
+  game.setRejoin(a.id, false);
+  assert.throws(() => game.join('Os Escaláveis'), { code: 'name_taken' });
+});
+
+test('reentrada funciona até no resultado final', () => {
+  const { game, clock } = setup();
+  const a = game.join('A');
+  game.advance();
+  for (let i = 0; i < 9; i += 1) {
+    playRound(game, clock, { [a.id]: 'best' });
+    game.advance();
+  }
+  assert.equal(game.phase, PHASE.FINAL);
+  assert.throws(() => game.join('B'), { code: 'game_finished' });
+  game.setRejoin(a.id, true);
+  assert.equal(game.join('A').id, a.id);
+});

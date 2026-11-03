@@ -97,7 +97,7 @@
   }
 
   const REASONS = {
-    name_taken: 'Já existe um time com esse nome. Escolham outro.',
+    name_taken: 'Já existe um time com esse nome. Se é o time de vocês num celular novo, peçam ao operador para liberar a reentrada e entrem de novo com o mesmo nome.',
     invalid_name: 'Digitem um nome com pelo menos uma letra ou número.',
     game_finished: 'O jogo já terminou.',
     game_full: 'O jogo está lotado. Juntem-se a outro time.',
@@ -158,7 +158,7 @@
   // Se o servidor não confirmar esta versão logo depois de conectar, ele está
   // rodando código antigo (processo não reiniciado depois do deploy): a tela
   // avisa em vez de ficar em branco.
-  const PROTOCOL = 2;
+  const PROTOCOL = 3;
 
   function watchServer(socket, message) {
     const banner = document.createElement('div');

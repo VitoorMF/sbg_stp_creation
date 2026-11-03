@@ -114,6 +114,16 @@ class Game {
   }
 
   join(rawName) {
+    // Celular trocado (bateria, navegador fechado): com a reentrada liberada
+    // pelo operador, o mesmo nome volta para o time existente, com o placar.
+    const key = nameKey(cleanName(rawName, this.config.MAX_NAME_LENGTH));
+    const back = key && Object.values(this.state.teams).find((t) => t.rejoinOpen && nameKey(t.name) === key);
+    if (back) {
+      delete back.rejoinOpen;
+      this._log(`Time "${back.name}" voltou em outro celular.`);
+      return back;
+    }
+
     if (this.state.phase === PHASE.FINAL) throw new GameError('game_finished');
     const name = this._validateName(rawName);
     if (Object.keys(this.state.teams).length >= this.config.MAX_TEAMS) throw new GameError('game_full');
@@ -154,6 +164,15 @@ class Game {
       if (rs.participants) rs.participants = rs.participants.filter((p) => p !== id);
     }
     this._log(`Time "${team.name}" removido pelo operador.`);
+  }
+
+  // Libera (ou cancela) a próxima entrada com o nome deste time.
+  setRejoin(id, open) {
+    const team = this.state.teams[id];
+    if (!team) throw new GameError('unknown_team');
+    if (open) team.rejoinOpen = true;
+    else delete team.rejoinOpen;
+    this._log(open ? `Reentrada liberada para "${team.name}".` : `Reentrada de "${team.name}" cancelada.`);
   }
 
   renameTeam(id, rawName) {
@@ -706,6 +725,7 @@ class Game {
           ...r,
           lowest: t.lowest,
           connected: connections[r.id] || 0,
+          rejoinOpen: !!t.rejoinOpen,
           answer: null,
           bet: null,
           result: null,

@@ -21,8 +21,8 @@ async function start(opts = {}) {
   });
   const port = await server.listen();
   const sockets = [];
-  const client = () => {
-    const s = connect(`http://localhost:${port}`, { transports: ['websocket'], forceNew: true, reconnection: false });
+  const client = (extra = {}) => {
+    const s = connect(`http://localhost:${port}`, { transports: ['websocket'], forceNew: true, reconnection: false, ...extra });
     s.on('state', (view) => {
       s.lastState = view;
     });
@@ -231,4 +231,56 @@ test('joinUrlFor: PUBLIC_URL, host do projetor e host inválido', () => {
   assert.equal(joinUrlFor(undefined, '54.1.2.3:3002', 3002), 'http://54.1.2.3:3002/');
   assert.ok(joinUrlFor(undefined, '<script>', 3002).startsWith('http://'));
   assert.ok(!joinUrlFor(undefined, '<script>', 3002).includes('<'));
+});
+
+test('token no handshake: resposta enviada logo ao reconectar, antes do team:resume, é aceita', async (t) => {
+  const { client, stop, server } = await start();
+  t.after(stop);
+  const admin = client();
+  await call(admin, 'admin:auth', { password: 'segredo' });
+  const phone = client();
+  const joined = await call(phone, 'team:join', { name: 'Rede Ruim' });
+  await call(admin, 'admin:action', { type: 'advance', expect: { phase: 'lobby', roundIndex: -1 } });
+  phone.close();
+
+  // Como o socket.io-client faz com o que foi confirmado sem rede: manda assim que conecta.
+  const best = server.game.currentRound.options.find((o) => o.tier === 'best').id;
+  const phone2 = client({ auth: { token: joined.token } });
+  const res = await call(phone2, 'team:answer', { optionId: best });
+  assert.equal(res.ok, true);
+  assert.equal(server.game.state.rounds[0].answers[server.game.resume(joined.token).id].optionId, best);
+  // O admin vê o time conectado de novo.
+  await waitState(admin, (v) => v.teams[0].connected === 1);
+
+  // Token inválido no handshake só não liga a time nenhum.
+  const stranger = client({ auth: { token: 'falso' } });
+  assert.equal((await call(stranger, 'team:answer', { optionId: best })).reason, 'unknown_team');
+});
+
+test('reentrada pelo admin e cópia do jogo antes de zerar', async (t) => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bora-reset-'));
+  t.after(() => fs.rmSync(dataDir, { recursive: true, force: true }));
+  const { client, stop } = await start({ persist: true, dataDir });
+  t.after(stop);
+  const admin = client();
+  await call(admin, 'admin:auth', { password: 'segredo' });
+  const phone = client();
+  const joined = await call(phone, 'team:join', { name: 'Bateria Fraca' });
+  const { teams } = await waitState(admin, (v) => v.teams.length === 1);
+
+  assert.equal((await call(client(), 'team:join', { name: 'Bateria Fraca' })).reason, 'name_taken');
+  assert.equal((await call(phone, 'admin:action', { type: 'allowRejoin', teamId: teams[0].id, open: true })).reason, 'not_admin');
+  assert.equal((await call(admin, 'admin:action', { type: 'allowRejoin', teamId: teams[0].id, open: true })).ok, true);
+  await waitState(admin, (v) => v.teams[0].rejoinOpen === true);
+  const newPhone = client();
+  const back = await call(newPhone, 'team:join', { name: 'Bateria Fraca' });
+  assert.equal(back.ok, true);
+  assert.equal(back.token, joined.token);
+  await waitState(newPhone, (v) => v.team && v.team.name === 'Bateria Fraca');
+
+  assert.equal((await call(admin, 'admin:action', { type: 'reset', keepTeams: false })).ok, true);
+  const copies = fs.readdirSync(dataDir).filter((f) => f.startsWith('state-antes-de-zerar-'));
+  assert.equal(copies.length, 1);
+  const saved = JSON.parse(fs.readFileSync(path.join(dataDir, copies[0]), 'utf8'));
+  assert.equal(Object.values(saved.teams)[0].name, 'Bateria Fraca');
 });
