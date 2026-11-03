@@ -81,7 +81,10 @@ test('fluxo completo por socket: entrar, responder, revelar, reconectar', async 
   assert.equal(joined.ok, true);
   assert.ok(joined.token);
   assert.equal((await call(client(), 'team:join', { name: 'os escalaveis' })).reason, 'name_taken');
-  assert.equal((await call(phone, 'team:join', { name: 'Outro' })).reason, 'already_joined');
+  // Mesmo socket pedindo de novo (a resposta anterior se perdeu): recebe o mesmo time.
+  const again = await call(phone, 'team:join', { name: 'Outro' });
+  assert.equal(again.ok, true);
+  assert.equal(again.token, joined.token);
 
   const lobby = await waitState(projector, (v) => v.teams && v.teams.length === 1);
   assert.deepEqual(lobby.teams, ['Os Escaláveis']);
@@ -165,7 +168,11 @@ test('payloads malformados não derrubam o servidor', async (t) => {
   assert.equal((await call(s, 'team:answer', 'x')).reason, 'unknown_team');
   assert.equal((await call(s, 'admin:auth', { password: { $ne: 1 } })).reason, 'wrong_password');
   s.emit('team:join', { name: 'sem callback' }); // não pode quebrar
-  assert.equal((await call(s, 'team:join', { name: 'ok' })).reason, 'already_joined');
+  // Nova entrada no mesmo socket devolve o time que ele já tem, sem criar outro.
+  const again = await call(s, 'team:join', { name: 'ok' });
+  assert.equal(again.ok, true);
+  assert.equal(again.name, 'sem callback');
+  assert.equal((await call(s, 'team:join', { name: 'ok', deviceId: ['lixo'] })).name, 'sem callback');
 });
 
 test('estado é gravado em disco e restaurado no reinício', async (t) => {
@@ -283,4 +290,75 @@ test('reentrada pelo admin e cópia do jogo antes de zerar', async (t) => {
   assert.equal(copies.length, 1);
   const saved = JSON.parse(fs.readFileSync(path.join(dataDir, copies[0]), 'utf8'));
   assert.equal(Object.values(saved.teams)[0].name, 'Bateria Fraca');
+});
+
+test('entrada repetida pelo mesmo celular (resposta perdida) devolve o mesmo time', async (t) => {
+  const { client, stop, server } = await start();
+  t.after(stop);
+  const deviceId = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
+  const first = client();
+  const joined = await call(first, 'team:join', { name: 'Wi-Fi Ruim', deviceId });
+  first.close(); // a resposta "não chegou" e o celular recarregou
+
+  const second = client();
+  const retry = await call(second, 'team:join', { name: 'Wi-Fi Ruim', deviceId });
+  assert.equal(retry.ok, true);
+  assert.equal(retry.token, joined.token);
+  assert.equal(Object.keys(server.game.state.teams).length, 1);
+  // Outro celular com o mesmo nome continua bloqueado.
+  assert.equal((await call(client(), 'team:join', { name: 'Wi-Fi Ruim', deviceId: 'ffffffffffffffffffffffffffffffff' })).reason, 'name_taken');
+});
+
+test('servidor que reinicia com a rodada aberta e prazo vencido dá tempo para os times', async (t) => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bora-restart-'));
+  t.after(() => fs.rmSync(dataDir, { recursive: true, force: true }));
+  const first = await start({ persist: true, dataDir });
+  const admin = first.client();
+  await call(admin, 'admin:auth', { password: 'segredo' });
+  const phone = first.client();
+  const joined = await call(phone, 'team:join', { name: 'Paciente' });
+  await call(admin, 'admin:action', { type: 'advance', expect: { phase: 'lobby', roundIndex: -1 } });
+  await first.stop();
+
+  // Volta 10 minutos depois: o prazo de 60 s venceu com o servidor fora do ar.
+  const second = await start({ persist: true, dataDir, now: () => Date.now() + 10 * 60 * 1000 });
+  t.after(second.stop);
+  assert.equal(second.server.game.phase, 'question');
+  const left = second.server.game.viewForAdmin().timer.remainingMs;
+  assert.ok(left > 14000 && left <= 15000, `restam ${left} ms`);
+  await new Promise((r) => setTimeout(r, 150)); // vários tiques do timer
+  assert.equal(second.server.game.phase, 'question');
+  const back = second.client({ auth: { token: joined.token } });
+  const best = second.server.game.currentRound.options.find((o) => o.tier === 'best').id;
+  assert.equal((await call(back, 'team:answer', { optionId: best })).ok, true);
+});
+
+test('remover time grava uma cópia do jogo antes', async (t) => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bora-remove-'));
+  t.after(() => fs.rmSync(dataDir, { recursive: true, force: true }));
+  const { client, stop } = await start({ persist: true, dataDir });
+  t.after(stop);
+  const admin = client();
+  await call(admin, 'admin:auth', { password: 'segredo' });
+  await call(client(), 'team:join', { name: 'Removido por Engano' });
+  const { teams } = await waitState(admin, (v) => v.teams.length === 1);
+  assert.equal((await call(admin, 'admin:action', { type: 'removeTeam', teamId: 'nao-existe' })).reason, 'unknown_team');
+  assert.equal(fs.readdirSync(dataDir).filter((f) => f.startsWith('state-antes-de-remover-')).length, 0);
+  assert.equal((await call(admin, 'admin:action', { type: 'removeTeam', teamId: teams[0].id })).ok, true);
+  const copies = fs.readdirSync(dataDir).filter((f) => f.startsWith('state-antes-de-remover-'));
+  assert.equal(copies.length, 1);
+  const saved = JSON.parse(fs.readFileSync(path.join(dataDir, copies[0]), 'utf8'));
+  assert.equal(Object.values(saved.teams)[0].name, 'Removido por Engano');
+});
+
+test('state.json ilegível é guardado antes de começar um jogo novo', async (t) => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bora-corrupt-'));
+  t.after(() => fs.rmSync(dataDir, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(dataDir, 'state.json'), '{"version": 2, "teams": {"t1"');
+  const { stop, server } = await start({ persist: true, dataDir });
+  t.after(stop);
+  assert.equal(server.game.phase, 'lobby');
+  const copies = fs.readdirSync(dataDir).filter((f) => f.startsWith('state-ilegivel-'));
+  assert.equal(copies.length, 1);
+  assert.equal(fs.readFileSync(path.join(dataDir, copies[0]), 'utf8'), '{"version": 2, "teams": {"t1"');
 });

@@ -348,15 +348,32 @@
     <span id="tb-name" class="name"></span>
     <span id="tb-val" class="val"></span>
   </header>
-  <main id="app" class="wrap"></main>
+  <main id="app" class="wrap">
+    <!-- Some assim que o script desenha a tela. Se ficar, o script não carregou. -->
+    <p class="center muted" style="margin-top:40px">Carregando o jogo… Se esta mensagem não sumir em alguns segundos, recarreguem a página ou abram o link em outro navegador ou celular.</p>
+  </main>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/common.js"></script>
   <script>
     const { el, fmtBRL, fmtMult, fmtPct, ordinal, Countdown, reasonText, request, storage } = window.Bora;
     const TOKEN_KEY = 'bora.teamToken';
+    // Token do time que este celular perdeu (removido ou jogo apagado). Se o
+    // operador restaurar a cópia do jogo, o celular volta sozinho para o time.
+    const PREV_TOKEN_KEY = 'bora.prevTeamToken';
+    const DEVICE_KEY = 'bora.deviceId';
     const app = document.getElementById('app');
     let token = storage.get(TOKEN_KEY);
+
+    // Código aleatório deste celular, enviado na entrada: se a resposta da
+    // entrada se perder na rede, a nova tentativa recebe o mesmo time.
+    let deviceId = storage.get(DEVICE_KEY);
+    if (!deviceId || !/^[A-Za-z0-9_-]{16,64}$/.test(deviceId)) {
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      deviceId = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+      storage.set(DEVICE_KEY, deviceId);
+    }
     // O token vai no handshake de cada (re)conexão: o servidor já liga o socket
     // ao time antes de qualquer evento, inclusive a resposta que foi confirmada
     // enquanto a rede estava caída.
@@ -381,17 +398,31 @@
       document.getElementById('conn').classList.remove('show');
       if (!token) {
         render();
+        await tryPreviousTeam();
         return;
       }
       const res = await request(socket, 'team:resume', { token });
       if (!res.ok && res.reason === 'unknown_token') forgetTeam('');
     });
 
+    async function tryPreviousTeam() {
+      const prev = storage.get(PREV_TOKEN_KEY);
+      if (!prev) return;
+      const res = await request(socket, 'team:resume', { token: prev }, 4000);
+      if (!res.ok || token) return;
+      token = prev;
+      storage.set(TOKEN_KEY, prev);
+      storage.remove(PREV_TOKEN_KEY);
+      notice = '';
+      render();
+    }
+
     socket.on('disconnect', () => {
       document.getElementById('conn').classList.add('show');
     });
 
     socket.on('state', (v) => {
+      if (!v || typeof v !== 'object') return;
       const prev = view;
       view = v;
       // O fim do timer e do bônus só é recalculado quando chega estado novo do
@@ -406,6 +437,7 @@
     socket.on('team:removed', () => forgetTeam('O operador removeu este time. Entrem de novo com outro nome.'));
 
     function forgetTeam(message) {
+      if (token) storage.set(PREV_TOKEN_KEY, token);
       token = null;
       view = null;
       storage.remove(TOKEN_KEY);
@@ -503,7 +535,7 @@
             }
             button.disabled = true;
             error.textContent = '';
-            const res = await request(socket, 'team:join', { name });
+            const res = await request(socket, 'team:join', { name, deviceId });
             button.disabled = false;
             if (!res.ok) {
               error.textContent = reasonText(res.reason);
@@ -515,6 +547,7 @@
             }
             token = res.token;
             storage.set(TOKEN_KEY, token);
+            storage.remove(PREV_TOKEN_KEY);
             notice = '';
             keepAwake();
             render();
@@ -627,7 +660,7 @@
           el('span', {}, fmtBRL(Math.round(v * f)))
         )
       );
-      const stakeFrac = choice ?? view.bet.defaultFraction;
+      const stakeFrac = choice !== null && choice !== undefined ? choice : view.bet.defaultFraction;
       const stake = Math.round(v * stakeFrac);
       return [
         el(

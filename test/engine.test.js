@@ -559,3 +559,54 @@ test('reentrada funciona até no resultado final', () => {
   game.setRejoin(a.id, true);
   assert.equal(game.join('A').id, a.id);
 });
+
+test('entrada pelo mesmo celular é idempotente; outro celular com o mesmo nome não entra', () => {
+  const { game } = setup();
+  const dev = 'device-0123456789abcdef';
+  const a = game.join('Os Escaláveis', dev);
+  assert.equal(game.join('Os Escaláveis', dev).id, a.id); // nova tentativa
+  assert.equal(game.join('Outro Nome', dev).id, a.id); // digitou outro nome na nova tentativa
+  assert.equal(Object.keys(game.state.teams).length, 1);
+  assert.throws(() => game.join('Os Escaláveis', 'outro-device-0123456789'), { code: 'name_taken' });
+  assert.throws(() => game.join('Os Escaláveis', 'curto'), { code: 'name_taken' }); // id inválido é ignorado
+  assert.throws(() => game.join('Os Escaláveis', { $gt: '' }), { code: 'name_taken' });
+  // Zerar mantendo times preserva o celular.
+  game.reset({ keepTeams: true });
+  assert.equal(game.join('Qualquer', dev).id, a.id);
+  // Reentrada em celular novo passa a reconhecer o celular novo.
+  game.setRejoin(a.id, true);
+  const dev2 = 'device-new-0123456789abcdef';
+  assert.equal(game.join('Os Escaláveis', dev2).id, a.id);
+  assert.equal(game.join('Os Escaláveis', dev2).id, a.id);
+});
+
+test('reinício com a rodada aberta: prazo vencido ganha tempo mínimo, prazo longo fica', () => {
+  const { game, clock } = setup();
+  game.join('A');
+  assert.equal(game.ensureTimeLeft(15000), false); // lobby: nada a fazer
+  game.advance();
+  assert.equal(game.ensureTimeLeft(15000), false); // 60 s ainda pela frente
+  clock.advance(10 * 60 * 1000); // servidor ficou fora do ar
+  assert.equal(game.ensureTimeLeft(15000), true);
+  assert.equal(game.tick(), false);
+  assert.equal(game.phase, PHASE.QUESTION);
+  assert.equal(game.viewForAdmin().timer.remainingMs, 15000);
+  clock.advance(15000 + config.ANSWER_GRACE_MS + 1);
+  assert.equal(game.tick(), true);
+  assert.equal(game.phase, PHASE.CLOSED);
+});
+
+test('reinício durante a aposta também ganha tempo mínimo', () => {
+  const { game, clock } = setup();
+  const a = game.join('A');
+  game.advance();
+  for (let i = 0; i < 8; i += 1) {
+    playRound(game, clock, { [a.id]: 'best' });
+    game.advance();
+  }
+  assert.equal(game.phase, PHASE.BET);
+  clock.advance(5 * 60 * 1000);
+  assert.equal(game.ensureTimeLeft(15000), true);
+  assert.equal(game.viewForAdmin().timer.remainingMs, 15000);
+  game.submitBet(a.id, 1);
+});

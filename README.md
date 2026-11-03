@@ -47,7 +47,7 @@ O admin também pode **renomear** ou **remover** times. Um time removido volta p
 
 **Time trocou de celular** (bateria acabou, navegador fechado, outra pessoa assumiu): no celular novo, o nome antigo dá "Já existe um time com esse nome". No admin, clique em **Reentrada** na linha do time e peça para o time entrar de novo digitando o mesmo nome. Ele volta com o placar e com a resposta da rodada, se já tiver respondido. Enquanto ninguém entra, o botão mostra "Aguardando reentrada… (cancelar)".
 
-**"Apagar tudo" ou "Zerar placar" por engano:** antes de zerar, o servidor grava uma cópia do jogo em `data/state-antes-de-zerar-<data>.json`. Para voltar, pare o processo (`pm2 stop startup-creation`), copie esse arquivo por cima de `data/state.json` e suba de novo (`pm2 start startup-creation`).
+**"Apagar tudo", "Zerar placar" ou "Remover" por engano:** com o jogo em andamento, zerar só acontece se o operador digitar APAGAR. Antes de zerar ou remover um time, o servidor grava uma cópia do jogo em `data/state-antes-de-zerar-<data>.json` ou `data/state-antes-de-remover-<data>.json`. Para voltar, pare o processo (`pm2 stop startup-creation`), copie a cópia por cima de `data/state.json` e suba de novo (`pm2 start startup-creation`). Os celulares guardam o time antigo e voltam para ele sozinhos quando reconectam.
 
 ## Regras implementadas
 
@@ -93,12 +93,12 @@ sudo npm install -g pm2
 ADMIN_PASSWORD='troque-isto' pm2 start ecosystem.config.js
 pm2 save
 pm2 startup                  # imprime um comando "sudo env ...": rode-o para o jogo voltar se a instância reiniciar
-curl localhost:3002/healthz  # precisa responder {"ok":true,"protocol":3,...}
+curl localhost:3002/healthz  # precisa responder {"ok":true,"protocol":4,...}
 ```
 
 - **Security group:** liberar a porta 3002 (TCP) para `0.0.0.0/0`.
 - **IP:** use um Elastic IP. Sem ele, o QR code do telão usa o endereço que você digitou para abrir o telão, então abra pelo IP público do dia. Para fixar o endereço, use `PUBLIC_URL=http://<ip>:3002`.
-- **Queda do processo:** o pm2 reinicia sozinho. O estado é gravado em `data/state.json` a cada mudança (inclusive a cada resposta) e volta no reinício, e os celulares reconectam ao mesmo time sozinhos.
+- **Queda do processo:** o pm2 reinicia sozinho. O estado é gravado em `data/state.json` a cada mudança (inclusive a cada resposta) e volta no reinício, e os celulares reconectam ao mesmo time sozinhos. Se a queda acontecer com apostas ou respostas abertas, a rodada volta com pelo menos 15 s (`RESTART_MIN_REMAINING_MS`), para ninguém levar "sem resposta" porque o servidor estava fora do ar. Se o `state.json` estiver ilegível, o servidor guarda uma cópia (`data/state-ilegivel-<data>.json`) antes de começar um jogo novo.
 - **Logs:** `pm2 logs startup-creation`.
 - **Jogo novo:** "Apagar tudo" no admin, ou pare o processo e apague `data/state.json`.
 
@@ -121,7 +121,7 @@ curl localhost:3002/healthz
 ## Checklist antes do evento
 
 - [ ] `ADMIN_PASSWORD` definido e anotado com o operador
-- [ ] Instância rodando desde antes da aula, `curl http://<ip>:3002/healthz` respondendo com `"protocol":3`
+- [ ] Instância rodando desde antes da aula, `curl http://<ip>:3002/healthz` respondendo com `"protocol":4`
 - [ ] Telão aberto pelo IP público e QR code testado com um celular no 4G e um no Wi-Fi da sala
 - [ ] Ensaio completo com `npm run bots -- 25 http://<ip>:3002`, depois "Apagar tudo"
 - [ ] Teste com alguém de fora do core team, e depois rodar `npm run simulate` para ajustar `config.js`

@@ -91,7 +91,7 @@ class Game {
     if (keepTeams) {
       this.state.seq = old.seq;
       for (const t of Object.values(old.teams)) {
-        this.state.teams[t.id] = this._newTeam(t.id, t.name, t.token, t.joinedAt);
+        this.state.teams[t.id] = this._newTeam(t.id, t.name, t.token, t.joinedAt, t.deviceId);
       }
     }
     this._log(keepTeams ? 'Jogo reiniciado (times mantidos).' : 'Jogo reiniciado do zero.');
@@ -99,9 +99,11 @@ class Game {
 
   // --- Times ---------------------------------------------------------------
 
-  _newTeam(id, name, token, joinedAt) {
+  _newTeam(id, name, token, joinedAt, deviceId) {
     const v = this.config.STARTING_VALUATION;
-    return { id, name, token, joinedAt, valuation: v, lowest: v, totalAnswerMs: 0 };
+    const team = { id, name, token, joinedAt, valuation: v, lowest: v, totalAnswerMs: 0 };
+    if (deviceId) team.deviceId = deviceId;
+    return team;
   }
 
   _validateName(raw, ignoreId) {
@@ -113,13 +115,24 @@ class Game {
     return name;
   }
 
-  join(rawName) {
+  // deviceId: código aleatório que o celular gera e guarda. Se a resposta da
+  // entrada se perde na rede, o celular tenta de novo e recebe o mesmo time,
+  // em vez de dar "nome em uso" e deixar um time fantasma no ranking.
+  join(rawName, deviceId) {
+    const device = typeof deviceId === 'string' && /^[A-Za-z0-9_-]{16,64}$/.test(deviceId) ? deviceId : null;
+    const teams = Object.values(this.state.teams);
+    if (device) {
+      const mine = teams.find((t) => t.deviceId === device);
+      if (mine) return mine;
+    }
+
     // Celular trocado (bateria, navegador fechado): com a reentrada liberada
     // pelo operador, o mesmo nome volta para o time existente, com o placar.
     const key = nameKey(cleanName(rawName, this.config.MAX_NAME_LENGTH));
-    const back = key && Object.values(this.state.teams).find((t) => t.rejoinOpen && nameKey(t.name) === key);
+    const back = key && teams.find((t) => t.rejoinOpen && nameKey(t.name) === key);
     if (back) {
       delete back.rejoinOpen;
+      if (device) back.deviceId = device;
       this._log(`Time "${back.name}" voltou em outro celular.`);
       return back;
     }
@@ -131,7 +144,7 @@ class Game {
     this.state.seq += 1;
     const id = `t${this.state.seq}`;
     const token = crypto.randomBytes(16).toString('hex');
-    const team = this._newTeam(id, name, token, this.now());
+    const team = this._newTeam(id, name, token, this.now(), device);
     this.state.teams[id] = team;
 
     // Entrou com a rodada aberta: ganha a ordem embaralhada dela também.
@@ -422,6 +435,22 @@ class Game {
       return true;
     }
     return false;
+  }
+
+  // Servidor reiniciou com apostas ou respostas abertas: o prazo pode ter
+  // vencido com o servidor fora do ar, e a rodada fecharia no primeiro tique,
+  // com todo mundo "sem resposta". Garante um tempo mínimo para os celulares
+  // reconectarem. Retorna true se mexeu no prazo.
+  ensureTimeLeft(minMs) {
+    const rs = this._rs();
+    const until = this.now() + minMs;
+    let field = null;
+    if (this.state.phase === PHASE.BET) field = 'betDeadline';
+    else if (this.state.phase === PHASE.QUESTION) field = 'deadline';
+    if (!field || rs[field] >= until) return false;
+    rs[field] = until;
+    this._log(`Servidor reiniciou com a rodada aberta: mais ${Math.round(minMs / 1000)} s para os times reconectarem.`);
+    return true;
   }
 
   extendTimer(ms) {

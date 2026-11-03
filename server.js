@@ -15,20 +15,22 @@ const { Game, GameError } = require('./gameEngine');
 
 // Versão do protocolo com as telas (a mesma de public/common.js). Uma tela que
 // não recebe esta versão ao conectar avisa que o servidor está desatualizado.
-const PROTOCOL = 3;
+const PROTOCOL = 4;
 const { ROUNDS, validateRounds } = require('./rounds');
 const DEFAULT_CONFIG = require('./config');
 
 // --- Estado em disco ---------------------------------------------------------
 
-function loadState(file) {
+function loadState(file, logger) {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
   } catch (err) {
-    if (err.code !== 'ENOENT') console.warn(`Não consegui ler ${file}: ${err.message}`);
+    if (err.code !== 'ENOENT') logger.warn(`Não consegui ler ${file}: ${err.message}`);
     return null;
   }
 }
+
+const fileStamp = () => new Date().toISOString().replace(/[:.]/g, '-');
 
 // Escreve num arquivo temporário e renomeia: uma queda no meio da escrita
 // nunca deixa o state.json pela metade.
@@ -111,11 +113,22 @@ function createServer({
 
   const game = new Game({ rounds, config, now, random });
   if (persist) {
-    const saved = loadState(stateFile);
+    const saved = loadState(stateFile, logger);
     if (saved && game.load(saved)) {
       logger.log(`Estado restaurado de ${stateFile}: fase "${game.phase}", rodada ${game.state.roundIndex + 1}.`);
-    } else if (saved) {
-      logger.warn('state.json incompatível com esta versão; começando um jogo novo.');
+      const minMs = config.RESTART_MIN_REMAINING_MS;
+      if (minMs && game.ensureTimeLeft(minMs)) {
+        logger.log(`Rodada aberta no reinício: prazo ajustado para ${Math.round(minMs / 1000)} s.`);
+      }
+    } else if (fs.existsSync(stateFile)) {
+      // O jogo novo sobrescreveria o arquivo na primeira mudança: guarda antes.
+      const copy = path.join(dataDir, `state-ilegivel-${fileStamp()}.json`);
+      try {
+        fs.copyFileSync(stateFile, copy);
+      } catch (err) {
+        logger.error(`Falha ao guardar ${copy}: ${err.message}`);
+      }
+      logger.warn(`state.json ilegível ou incompatível com esta versão; começando um jogo novo. Cópia do arquivo antigo: ${copy}`);
     }
   }
 
@@ -268,16 +281,16 @@ function createServer({
 
   const isAdmin = (socket) => socket.data.role === 'admin';
 
-  // "Apagar tudo" clicado por engano no meio da aula não tem desfazer: guarda
-  // uma cópia do jogo antes. Para voltar: pare o processo, copie o arquivo por
-  // cima de data/state.json e suba de novo.
-  function backupBeforeReset() {
+  // "Apagar tudo" ou "Remover" clicado por engano no meio da aula não tem
+  // desfazer: guarda uma cópia do jogo antes. Para voltar: pare o processo,
+  // copie o arquivo por cima de data/state.json e suba de novo. Os celulares
+  // guardam o token antigo e voltam sozinhos para o time restaurado.
+  function backupState(label) {
     if (!persist || !Object.keys(game.state.teams).length) return;
-    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const file = path.join(dataDir, `state-antes-de-zerar-${stamp}.json`);
+    const file = path.join(dataDir, `state-antes-de-${label}-${fileStamp()}.json`);
     try {
       saveState(file, game.toJSON());
-      logger.log(`Cópia do jogo antes de zerar: ${file}`);
+      logger.log(`Cópia do jogo antes de ${label}: ${file}`);
     } catch (err) {
       logger.error(`Falha ao gravar a cópia ${file}: ${err.message}`);
     }
@@ -314,11 +327,14 @@ function createServer({
 
     socket.on(
       'team:join',
-      handler(({ name }) => {
-        if (socket.data.teamId) throw new GameError('already_joined');
+      handler(({ name, deviceId }) => {
+        // Este socket já entrou e a resposta se perdeu na rede: devolve o mesmo
+        // time em vez de recusar (o celular ficaria preso na tela de entrada).
+        const current = socket.data.teamId && game.getTeam(socket.data.teamId);
+        if (current) return { token: current.token, name: current.name };
         socket.data.joinAttempts += 1;
         if (socket.data.joinAttempts > 20) throw new GameError('too_many_attempts');
-        const team = game.join(name);
+        const team = game.join(name, deviceId);
         socket.data.role = 'team';
         attachTeam(socket, team.id);
         changed();
@@ -384,6 +400,8 @@ function createServer({
             break;
           }
           case 'removeTeam':
+            if (!game.getTeam(teamId)) throw new GameError('unknown_team');
+            backupState('remover');
             game.removeTeam(teamId);
             break;
           case 'renameTeam':
@@ -393,7 +411,7 @@ function createServer({
             game.setRejoin(teamId, !!open);
             break;
           case 'reset':
-            backupBeforeReset();
+            backupState('zerar');
             game.reset({ keepTeams: !!keepTeams });
             break;
           default:

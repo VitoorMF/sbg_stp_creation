@@ -3,6 +3,15 @@
 // nome de time com <script> aparece como texto e não executa.
 
 (function () {
+  // Celulares antigos (iOS 13, Chrome < 86) não têm replaceChildren, que todas
+  // as telas usam para redesenhar.
+  if (!Element.prototype.replaceChildren) {
+    Element.prototype.replaceChildren = function (...nodes) {
+      this.textContent = '';
+      this.append(...nodes);
+    };
+  }
+
   const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
   const dec = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
 
@@ -108,7 +117,8 @@
     bet_not_open: 'As apostas estão fechadas.',
     invalid_option: 'Opção inválida.',
     invalid_bet: 'Aposta inválida.',
-    unknown_team: 'Time não encontrado. Entrem de novo.',
+    unknown_team: 'Time não encontrado. Recarreguem a página.',
+    already_joined: 'Este celular já está num time. Recarreguem a página.',
     wrong_password: 'Senha incorreta.',
     not_admin: 'Faça login de novo.',
     stale_action: 'O jogo já tinha avançado. Confira a tela.',
@@ -158,7 +168,7 @@
   // Se o servidor não confirmar esta versão logo depois de conectar, ele está
   // rodando código antigo (processo não reiniciado depois do deploy): a tela
   // avisa em vez de ficar em branco.
-  const PROTOCOL = 3;
+  const PROTOCOL = 4;
 
   function watchServer(socket, message) {
     const banner = document.createElement('div');

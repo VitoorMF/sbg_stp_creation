@@ -26,6 +26,10 @@ module.exports = {
   // Tolerância para a resposta que saiu do celular no último segundo.
   ANSWER_GRACE_MS: 750,
 
+  // Se o servidor reiniciar com apostas ou respostas abertas, a rodada ganha
+  // pelo menos este tempo para os celulares reconectarem.
+  RESTART_MIN_REMAINING_MS: 15000,
+
   SPEED_BONUS_WINDOW_MS: 25000,
   SPEED_BONUS_MULTIPLIER: 1.1, // +10%
   // Só a melhor opção ganha bônus, para não premiar chute rápido.

@@ -455,11 +455,24 @@
       action({ type: 'advance', expect: { phase: view.phase, roundIndex: view.roundIndex } });
     });
     document.getElementById('extend').addEventListener('click', () => action({ type: 'extend', seconds: 15 }));
+    // No meio do jogo, zerar por engano tira todo mundo da partida: pede para
+    // digitar APAGAR em vez de um simples OK.
+    function confirmReset(message) {
+      const inGame = view && view.phase !== 'lobby' && view.phase !== 'final';
+      if (!inGame) return confirm(message);
+      const typed = prompt(`⚠️ O JOGO ESTÁ EM ANDAMENTO.\n\n${message}\n\nPara confirmar, digite APAGAR:`);
+      if (typed === null) return false;
+      if (typed.trim().toUpperCase() !== 'APAGAR') {
+        toast('Nada foi apagado.');
+        return false;
+      }
+      return true;
+    }
     document.getElementById('reset-keep').addEventListener('click', () => {
-      if (confirm('Zerar o placar e voltar para a entrada, mantendo os times conectados?')) action({ type: 'reset', keepTeams: true });
+      if (confirmReset('Zerar o placar e voltar para a entrada, mantendo os times conectados?')) action({ type: 'reset', keepTeams: true });
     });
     document.getElementById('reset-all').addEventListener('click', () => {
-      if (confirm('Apagar todos os times e o placar? Os celulares voltam para a tela de entrada.')) action({ type: 'reset', keepTeams: false });
+      if (confirmReset('Apagar todos os times e o placar? Os celulares voltam para a tela de entrada.')) action({ type: 'reset', keepTeams: false });
     });
 
     const countdown = new Countdown((ms) => {
@@ -646,7 +659,11 @@
                 class: 'btn danger mini',
                 type: 'button',
                 onclick: () => {
-                  if (confirm(`Remover o time "${t.name}"? O celular volta para a tela de entrada.`)) action({ type: 'removeTeam', teamId: t.id });
+                  const msg =
+                    view.phase === 'lobby'
+                      ? `Remover o time "${t.name}"? O celular volta para a tela de entrada.`
+                      : `Remover "${t.name}" do jogo?\n\nO time perde o placar (${fmtBRL(t.valuation)}) e não dá para desfazer pelo painel.\n\nSe o time só trocou de celular, cancele e use "Reentrada".`;
+                  if (confirm(msg)) action({ type: 'removeTeam', teamId: t.id });
                 },
               },
               'Remover'
