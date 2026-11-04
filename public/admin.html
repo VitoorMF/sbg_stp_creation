@@ -586,7 +586,7 @@
       const showRound = r && view.phase !== 'lobby' && view.phase !== 'final';
 
       document.getElementById('teams-head').replaceChildren(
-        el('tr', {}, el('th', {}, '#'), el('th', {}, 'CEO'), el('th', {}, 'Valuation'), el('th', {}, showRound ? (view.phase === 'bet' ? 'Aposta' : 'Resposta') : view.phase === 'final' ? 'Faixa' : ''), el('th', {}, ''))
+        el('tr', {}, el('th', {}, '#'), el('th', {}, 'CTO'), el('th', {}, 'Valuation'), el('th', {}, showRound ? (view.phase === 'bet' ? 'Aposta' : 'Resposta') : view.phase === 'final' ? 'Faixa' : ''), el('th', {}, ''))
       );
 
       const rows = view.teams.map((t) => {

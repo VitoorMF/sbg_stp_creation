@@ -1,6 +1,6 @@
 # Startup Creation
 
-Jogo individual de 9 rodadas: cada pessoa é CEO da Bora.ai (venda de ingressos para shows e festivais) e decide a arquitetura no próprio celular, no estilo Kahoot. Cada escolha multiplica o valuation da startup, e o maior valuation no final ganha. Até 60 jogadores (`MAX_TEAMS`). No código, cada jogador ainda se chama "time" (`team`).
+Jogo individual de 9 rodadas: cada pessoa é CTO da Bora.ai (venda de ingressos para shows e festivais) e decide a arquitetura no próprio celular, no estilo Kahoot. Cada escolha multiplica o valuation da startup, e o maior valuation no final ganha. Até 60 jogadores (`MAX_TEAMS`). No código, cada jogador ainda se chama "time" (`team`).
 
 ## Rodar
 

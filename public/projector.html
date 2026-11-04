@@ -802,20 +802,20 @@
           'div',
           { class: 'lobby-text', 'data-fit': true },
           el('h1', {}, 'Startup Creation'),
-          el('p', { class: 'lead' }, 'Cada um de vocês é CEO da Bora.ai, a plataforma de ingressos para shows e festivais.'),
+          el('p', { class: 'lead' }, 'Cada um de vocês é CTO da Bora.ai, a plataforma de ingressos para shows e festivais.'),
           el(
             'ol',
             { class: 'steps' },
             el('li', {}, el('b', {}, '1'), 'Escaneie o QR code com o seu celular.'),
-            el('li', {}, el('b', {}, '2'), 'Digite o seu nome: você é o CEO.'),
+            el('li', {}, el('b', {}, '2'), 'Digite o seu nome: você é o CTO.'),
             el('li', {}, el('b', {}, '3'), 'Cada decisão de arquitetura muda o valuation da sua startup.')
           ),
-          el('div', { class: 'teams-head' }, `CEOs conectados: ${teams.length}`),
+          el('div', { class: 'teams-head' }, `CTOs conectados: ${teams.length}`),
           el(
             'div',
             { class: 'chips' },
-            teams.length ? teams.slice(-LOBBY_NAMES).map((n) => el('span', { class: 'chip' }, n)) : el('span', { class: 'muted' }, 'Aguardando o primeiro CEO…'),
-            teams.length > LOBBY_NAMES ? el('span', { class: 'muted' }, `+${teams.length - LOBBY_NAMES} CEOs`) : null
+            teams.length ? teams.slice(-LOBBY_NAMES).map((n) => el('span', { class: 'chip' }, n)) : el('span', { class: 'muted' }, 'Aguardando o primeiro CTO…'),
+            teams.length > LOBBY_NAMES ? el('span', { class: 'muted' }, `+${teams.length - LOBBY_NAMES} CTOs`) : null
           )
         ),
         el(
