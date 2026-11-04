@@ -306,7 +306,7 @@
       <h1>🎛️ Startup Creation · Operador</h1>
       <div class="links" style="margin-left:auto">
         <a href="/telao" target="_blank" rel="noopener">Abrir telão ↗</a>
-        <span class="muted">Entrada dos times: <b id="join-url"></b></span>
+        <span class="muted">Entrada dos jogadores: <b id="join-url"></b></span>
       </div>
     </div>
 
@@ -327,7 +327,7 @@
       </div>
       <div class="stack">
         <section class="card">
-          <h2 id="teams-title">Times</h2>
+          <h2 id="teams-title">Jogadores</h2>
           <div style="overflow-x:auto"><table><thead id="teams-head"></thead><tbody id="teams-body"></tbody></table></div>
         </section>
         <section class="card">
@@ -338,7 +338,7 @@
           <h2>Reiniciar</h2>
           <p class="muted" style="margin-top:0;font-size:14px">Use depois do ensaio. Não dá para desfazer.</p>
           <div class="danger-zone">
-            <button id="reset-keep" class="btn danger" type="button">Zerar placar e manter times</button>
+            <button id="reset-keep" class="btn danger" type="button">Zerar placar e manter jogadores</button>
             <button id="reset-all" class="btn danger" type="button">Apagar tudo</button>
           </div>
         </section>
@@ -353,9 +353,9 @@
     const { el, fmtBRL, fmtShort, fmtMult, fmtPct, Countdown, reasonText, request } = window.Bora;
     const PASS_KEY = 'bora.adminPass';
     const PHASE_LABEL = {
-      lobby: 'Entrada dos times',
+      lobby: 'Entrada dos jogadores',
       bet: 'Apostas abertas',
-      question: 'Times respondendo',
+      question: 'Jogadores respondendo',
       closed: 'Respostas encerradas',
       twist: 'Crise na tela',
       reveal: 'Resposta revelada',
@@ -447,10 +447,10 @@
 
     document.getElementById('primary').addEventListener('click', () => {
       if (!view || !view.nextAction) return;
-      if (view.phase === 'lobby' && view.teams.length === 0 && !confirm('Nenhum time entrou ainda. Começar mesmo assim?')) return;
+      if (view.phase === 'lobby' && view.teams.length === 0 && !confirm('Ninguém entrou ainda. Começar mesmo assim?')) return;
       if (view.phase === 'question') {
         const missing = view.teams.length - view.round.answeredCount;
-        if (missing > 0 && !confirm(`${missing} time(s) ainda não responderam e vão levar a pior opção. Encerrar agora?`)) return;
+        if (missing > 0 && !confirm(`${missing} jogador(es) ainda não responderam e vão levar a pior opção. Encerrar agora?`)) return;
       }
       action({ type: 'advance', expect: { phase: view.phase, roundIndex: view.roundIndex } });
     });
@@ -469,10 +469,10 @@
       return true;
     }
     document.getElementById('reset-keep').addEventListener('click', () => {
-      if (confirmReset('Zerar o placar e voltar para a entrada, mantendo os times conectados?')) action({ type: 'reset', keepTeams: true });
+      if (confirmReset('Zerar o placar e voltar para a entrada, mantendo os jogadores conectados?')) action({ type: 'reset', keepTeams: true });
     });
     document.getElementById('reset-all').addEventListener('click', () => {
-      if (confirmReset('Apagar todos os times e o placar? Os celulares voltam para a tela de entrada.')) action({ type: 'reset', keepTeams: false });
+      if (confirmReset('Apagar todos os jogadores e o placar? Os celulares voltam para a tela de entrada.')) action({ type: 'reset', keepTeams: false });
     });
 
     const countdown = new Countdown((ms) => {
@@ -498,8 +498,8 @@
       let what = '';
       let sub = '';
       if (view.phase === 'lobby') {
-        what = `${view.teams.length} time(s) conectado(s)`;
-        sub = 'Projete o telão e espere os times entrarem pelo QR code.';
+        what = `${view.teams.length} jogador(es) conectado(s)`;
+        sub = 'Projete o telão e espere os jogadores entrarem pelo QR code.';
       } else if (view.phase === 'final') {
         what = 'Jogo encerrado';
         sub = view.teams[0] ? `Vencedor: ${view.teams[0].name}` : '';
@@ -569,7 +569,7 @@
       if (r.event) {
         parts.push(
           el('div', { class: 'k' }, 'Evento sorteado'),
-          el('p', {}, `📰 ${r.event.label} "${r.event.teamName}" ${fmtPct(r.event.pct)} (${fmtShort(r.event.before)} → ${fmtShort(r.event.after)})`)
+          el('p', {}, `📰 "${r.event.teamName}": ${r.event.label} ${fmtPct(r.event.pct)} (${fmtShort(r.event.before)} → ${fmtShort(r.event.after)})`)
         );
       }
       if (view.nextRound) parts.push(el('p', { class: 'muted', style: 'margin-top:14px' }, `Próxima: rodada ${view.nextRound.number} · ${view.nextRound.moment} · ${view.nextRound.title}`));
@@ -580,13 +580,13 @@
       const sig = JSON.stringify([view.teams, view.phase, view.roundIndex]);
       if (sig === teamsSig) return;
       teamsSig = sig;
-      document.getElementById('teams-title').textContent = `Times (${view.teams.length})`;
+      document.getElementById('teams-title').textContent = `Jogadores (${view.teams.length})`;
       const r = view.round;
       const byId = r ? Object.fromEntries(r.options.map((o) => [o.id, o])) : {};
       const showRound = r && view.phase !== 'lobby' && view.phase !== 'final';
 
       document.getElementById('teams-head').replaceChildren(
-        el('tr', {}, el('th', {}, '#'), el('th', {}, 'Time'), el('th', {}, 'Valuation'), el('th', {}, showRound ? (view.phase === 'bet' ? 'Aposta' : 'Resposta') : view.phase === 'final' ? 'Faixa' : ''), el('th', {}, ''))
+        el('tr', {}, el('th', {}, '#'), el('th', {}, 'CEO'), el('th', {}, 'Valuation'), el('th', {}, showRound ? (view.phase === 'bet' ? 'Aposta' : 'Resposta') : view.phase === 'final' ? 'Faixa' : ''), el('th', {}, ''))
       );
 
       const rows = view.teams.map((t) => {
@@ -641,11 +641,11 @@
               {
                 class: `btn ${t.rejoinOpen ? '' : 'ghost '}mini`,
                 type: 'button',
-                title: 'Para quando o time trocou de celular: a próxima entrada com este nome volta para este time, com o placar.',
+                title: 'Para quando o jogador trocou de celular: a próxima entrada com este nome volta para ele, com o placar.',
                 onclick: () => {
                   if (t.rejoinOpen) {
                     action({ type: 'allowRejoin', teamId: t.id, open: false });
-                  } else if (confirm(`Liberar a reentrada de "${t.name}"?\n\nNo celular novo, o time digita exatamente "${t.name}" e volta com o placar. Use só se o time perdeu o celular ou fechou o navegador.`)) {
+                  } else if (confirm(`Liberar a reentrada de "${t.name}"?\n\nNo celular novo, o jogador digita exatamente "${t.name}" e volta com o placar. Use só se ele perdeu o celular ou fechou o navegador.`)) {
                     action({ type: 'allowRejoin', teamId: t.id, open: true });
                   }
                 },
@@ -661,8 +661,8 @@
                 onclick: () => {
                   const msg =
                     view.phase === 'lobby'
-                      ? `Remover o time "${t.name}"? O celular volta para a tela de entrada.`
-                      : `Remover "${t.name}" do jogo?\n\nO time perde o placar (${fmtBRL(t.valuation)}) e não dá para desfazer pelo painel.\n\nSe o time só trocou de celular, cancele e use "Reentrada".`;
+                      ? `Remover "${t.name}"? O celular volta para a tela de entrada.`
+                      : `Remover "${t.name}" do jogo?\n\nO jogador perde o placar (${fmtBRL(t.valuation)}) e não dá para desfazer pelo painel.\n\nSe ele só trocou de celular, cancele e use "Reentrada".`;
                   if (confirm(msg)) action({ type: 'removeTeam', teamId: t.id });
                 },
               },
@@ -671,7 +671,7 @@
           )
         );
       });
-      document.getElementById('teams-body').replaceChildren(...(rows.length ? rows : [el('tr', {}, el('td', { colspan: '5', class: 'muted' }, 'Nenhum time ainda.'))]));
+      document.getElementById('teams-body').replaceChildren(...(rows.length ? rows : [el('tr', {}, el('td', { colspan: '5', class: 'muted' }, 'Ninguém entrou ainda.'))]));
     }
 
     function renderLog() {

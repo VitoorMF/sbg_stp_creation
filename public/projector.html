@@ -764,7 +764,7 @@
       const answered = document.getElementById('answered');
       if (answered) {
         const n = view.phase === 'bet' ? view.betCount : view.answeredCount;
-        answered.textContent = `${n} de ${view.teamCount} times ${view.phase === 'bet' ? 'apostaram' : 'responderam'}`;
+        answered.textContent = `${n} de ${view.teamCount} jogadores ${view.phase === 'bet' ? 'apostaram' : 'responderam'}`;
         const fill = document.getElementById('answered-fill');
         if (fill) fill.style.width = `${view.teamCount ? (n / view.teamCount) * 100 : 0}%`;
       }
@@ -789,6 +789,10 @@
       );
     }
 
+    // Com a turma inteira, os nomes não cabem sem encolher as instruções:
+    // mostra os mais recentes, para quem acabou de entrar se ver na tela.
+    const LOBBY_NAMES = 40;
+
     function lobby() {
       const teams = view.teams || [];
       return el(
@@ -798,19 +802,20 @@
           'div',
           { class: 'lobby-text', 'data-fit': true },
           el('h1', {}, 'Startup Creation'),
-          el('p', { class: 'lead' }, 'Vocês são o time técnico da Bora.ai, a plataforma de ingressos para shows e festivais.'),
+          el('p', { class: 'lead' }, 'Cada um de vocês é CEO da Bora.ai, a plataforma de ingressos para shows e festivais.'),
           el(
             'ol',
             { class: 'steps' },
-            el('li', {}, el('b', {}, '1'), 'Juntem-se em times de 2 a 4 pessoas.'),
-            el('li', {}, el('b', {}, '2'), 'Um celular por time: escaneiem o QR code.'),
-            el('li', {}, el('b', {}, '3'), 'Digitem o nome do time e aguardem.')
+            el('li', {}, el('b', {}, '1'), 'Escaneie o QR code com o seu celular.'),
+            el('li', {}, el('b', {}, '2'), 'Digite o seu nome: você é o CEO.'),
+            el('li', {}, el('b', {}, '3'), 'Cada decisão de arquitetura muda o valuation da sua startup.')
           ),
-          el('div', { class: 'teams-head' }, `Times conectados: ${teams.length}`),
+          el('div', { class: 'teams-head' }, `CEOs conectados: ${teams.length}`),
           el(
             'div',
             { class: 'chips' },
-            teams.length ? teams.map((n) => el('span', { class: 'chip' }, n)) : el('span', { class: 'muted' }, 'Aguardando o primeiro time…')
+            teams.length ? teams.slice(-LOBBY_NAMES).map((n) => el('span', { class: 'chip' }, n)) : el('span', { class: 'muted' }, 'Aguardando o primeiro CEO…'),
+            teams.length > LOBBY_NAMES ? el('span', { class: 'muted' }, `+${teams.length - LOBBY_NAMES} CEOs`) : null
           )
         ),
         el(
@@ -887,7 +892,7 @@
             { class: 'row' },
             el('span', {}, best ? '✅' : '✖️'),
             el('span', {}, o.label),
-            el('span', { class: 'count' }, `${n} ${n === 1 ? 'time' : 'times'}`)
+            el('span', { class: 'count' }, `${n} ${n === 1 ? 'jogador' : 'jogadores'}`)
           ),
           el('p', { class: 'txt' }, rv.optionTexts[o.id]),
           el('div', { class: 'fill' }, el('div', { style: `width:${(n / total) * 100}%` }))
@@ -909,9 +914,9 @@
           ? el(
               'div',
               { class: 'event' },
-              `📰 ${rv.event.label} `,
+              '📰 ',
               el('span', { style: 'color:var(--accent)' }, rv.event.teamName),
-              ': ',
+              `: ${rv.event.label} `,
               el('span', { class: `pct ${rv.event.pct > 0 ? 'up' : 'down'}` }, fmtPct(rv.event.pct))
             )
           : null,
@@ -953,7 +958,7 @@
             )
           )
         ),
-        view.ranking.length > list.length ? el('p', { class: 'muted' }, `+${view.ranking.length - list.length} times`) : null
+        view.ranking.length > list.length ? el('p', { class: 'muted' }, `+${view.ranking.length - list.length} jogadores`) : null
       );
     }
 
@@ -998,7 +1003,7 @@
             { class: 'side', 'data-fit': true },
             el('h2', {}, 'Classificação'),
             el('ol', { class: `ranking standings${shown.length > 12 ? ' two' : ''}` }, items),
-            rest.length > shown.length ? el('p', { class: 'muted' }, `+${rest.length - shown.length} times`) : null
+            rest.length > shown.length ? el('p', { class: 'muted' }, `+${rest.length - shown.length} jogadores`) : null
           )
         )
       );

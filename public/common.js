@@ -106,25 +106,25 @@
   }
 
   const REASONS = {
-    name_taken: 'Já existe um time com esse nome. Se é o time de vocês num celular novo, peçam ao operador para liberar a reentrada e entrem de novo com o mesmo nome.',
-    invalid_name: 'Digitem um nome com pelo menos uma letra ou número.',
+    name_taken: 'Já tem alguém com esse nome. Se é você num celular novo, peça ao operador para liberar a reentrada e entre de novo com o mesmo nome. Senão, use também o sobrenome.',
+    invalid_name: 'Digite um nome com pelo menos uma letra ou número.',
     game_finished: 'O jogo já terminou.',
-    game_full: 'O jogo está lotado. Juntem-se a outro time.',
-    too_many_attempts: 'Muitas tentativas. Recarreguem a página.',
+    game_full: 'O jogo está lotado. Avise o operador.',
+    too_many_attempts: 'Muitas tentativas. Recarregue a página.',
     time_up: 'O tempo acabou.',
-    already_answered: 'Vocês já responderam.',
+    already_answered: 'Você já respondeu.',
     round_not_open: 'A rodada não está aberta.',
     bet_not_open: 'As apostas estão fechadas.',
     invalid_option: 'Opção inválida.',
     invalid_bet: 'Aposta inválida.',
-    unknown_team: 'Time não encontrado. Recarreguem a página.',
-    already_joined: 'Este celular já está num time. Recarreguem a página.',
+    unknown_team: 'Jogador não encontrado. Recarregue a página.',
+    already_joined: 'Este celular já está no jogo. Recarregue a página.',
     wrong_password: 'Senha incorreta.',
     not_admin: 'Faça login de novo.',
     stale_action: 'O jogo já tinha avançado. Confira a tela.',
     no_timer: 'Não há timer rodando agora.',
-    server_error: 'Erro no servidor. Tentem de novo.',
-    timeout: 'Sem resposta do servidor. Confiram a conexão.',
+    server_error: 'Erro no servidor. Tente de novo.',
+    timeout: 'Sem resposta do servidor. Confira a conexão.',
   };
 
   function reasonText(reason) {

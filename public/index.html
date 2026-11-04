@@ -350,7 +350,7 @@
   </header>
   <main id="app" class="wrap">
     <!-- Some assim que o script desenha a tela. Se ficar, o script não carregou. -->
-    <p class="center muted" style="margin-top:40px">Carregando o jogo… Se esta mensagem não sumir em alguns segundos, recarreguem a página ou abram o link em outro navegador ou celular.</p>
+    <p class="center muted" style="margin-top:40px">Carregando o jogo… Se esta mensagem não sumir em alguns segundos, recarregue a página ou abra o link em outro navegador ou celular.</p>
   </main>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -434,7 +434,7 @@
       render();
     });
 
-    socket.on('team:removed', () => forgetTeam('O operador removeu este time. Entrem de novo com outro nome.'));
+    socket.on('team:removed', () => forgetTeam('O operador removeu você do jogo. Entre de novo com outro nome.'));
 
     function forgetTeam(message) {
       if (token) storage.set(PREV_TOKEN_KEY, token);
@@ -519,7 +519,7 @@
         autocomplete: 'off',
         autocapitalize: 'words',
         enterkeyhint: 'go',
-        placeholder: 'Ex.: Os Escaláveis',
+        placeholder: 'Ex.: Ana Souza',
       });
       const error = el('p', { class: 'error', role: 'alert' }, notice);
       const button = el('button', { class: 'btn full', type: 'submit' }, 'Entrar no jogo');
@@ -530,7 +530,7 @@
             e.preventDefault();
             const name = input.value.trim();
             if (!name) {
-              error.textContent = 'Digitem o nome do time.';
+              error.textContent = 'Digite o seu nome.';
               return;
             }
             button.disabled = true;
@@ -553,7 +553,7 @@
             render();
           },
         },
-        el('label', { for: 'team-name' }, 'Nome do time'),
+        el('label', { for: 'team-name' }, 'Nome do CEO'),
         input,
         button,
         error
@@ -564,10 +564,10 @@
           { class: 'brand' },
           el('div', { class: 'logo' }, '🎟️'),
           el('h1', {}, 'Startup Creation'),
-          el('p', {}, 'Vocês são o time técnico da Bora.ai.')
+          el('p', {}, 'Você é CEO da Bora.ai e decide a arquitetura.')
         ),
         el('div', { class: 'card' }, form),
-        el('p', { class: 'muted center', style: 'font-size:14px' }, 'Um celular por time. Discutam juntos antes de responder.')
+        el('p', { class: 'muted center', style: 'font-size:14px' }, 'É você! Seu nome aparece no ranking do telão.')
       );
     }
 
@@ -602,12 +602,12 @@
       const bonus = document.getElementById('bonus');
       if (bonus && bonusEndsAt !== null) {
         const left = Math.ceil((bonusEndsAt - performance.now()) / 1000);
-        bonus.textContent = left > 0 ? `⚡ Acertem nos próximos ${left}s para ganhar +10%` : '';
+        bonus.textContent = left > 0 ? `⚡ Acerte nos próximos ${left}s para ganhar +10%` : '';
       }
     }
 
     function positionLine() {
-      if (view.position) return `Vocês estão em ${ordinal(view.position)} de ${view.teamCount} times.`;
+      if (view.position) return `Você está em ${ordinal(view.position)} de ${view.teamCount} jogadores.`;
       return '🔒 O ranking fica escondido até o resultado final.';
     }
 
@@ -617,8 +617,8 @@
           'div',
           { class: 'card center' },
           el('div', { class: 'big-emoji' }, '✅'),
-          el('h2', {}, 'Vocês estão dentro!'),
-          el('p', { class: 'muted', style: 'margin:0' }, 'Olhem para o telão. O jogo começa em instantes.')
+          el('h2', {}, 'Você está dentro!'),
+          el('p', { class: 'muted', style: 'margin:0' }, 'Olhe para o telão. O jogo começa em instantes.')
         ),
         el(
           'div',
@@ -627,7 +627,7 @@
           el(
             'ul',
             { class: 'bet-rules' },
-            el('li', {}, 'Todo time começa com R$ 100 mil de valuation.'),
+            el('li', {}, 'Toda startup começa com R$ 100 mil de valuation.'),
             el('li', {}, 'Cada decisão multiplica o valuation: a melhor sobe, a pior derruba.'),
             el('li', {}, 'Acertar nos primeiros 25 segundos vale +10%.'),
             el('li', {}, 'Sem resposta conta como a pior opção.'),
@@ -669,7 +669,7 @@
           roundMeta(),
           timerBlock(),
           el('h2', {}, '🎲 Aposta final'),
-          el('p', { class: 'scenario' }, 'Quanto do valuation vocês apostam? A pergunta só aparece depois da aposta.'),
+          el('p', { class: 'scenario' }, 'Quanto do valuation você aposta? A pergunta só aparece depois da aposta.'),
           el('div', { class: 'bets' }, buttons),
           el(
             'ul',
@@ -745,7 +745,7 @@
         el('div', {}, options),
         confirm,
         !answered && selected.optionId && !sending
-          ? el('p', { class: 'muted center', style: 'font-size:14px;margin:8px 0 0' }, 'Só escolher não vale: toquem em "Confirmar resposta".')
+          ? el('p', { class: 'muted center', style: 'font-size:14px;margin:8px 0 0' }, 'Só escolher não vale: toque em "Confirmar resposta".')
           : null,
         el('p', { class: 'error', role: 'alert' }, actionError),
       ];
@@ -753,12 +753,12 @@
 
     function chosenLine() {
       if (view.participating === false) {
-        return el('p', { class: 'muted' }, 'Vocês entraram depois do fim desta rodada. Participam a partir da próxima.');
+        return el('p', { class: 'muted' }, 'Você entrou depois do fim desta rodada. Participa a partir da próxima.');
       }
       const opt = view.myAnswer && view.options.find((o) => o.id === view.myAnswer);
       return opt
-        ? [el('div', { class: 'label-sm' }, 'Vocês escolheram'), el('p', { style: 'margin:0' }, opt.label)]
-        : el('p', { class: 'muted' }, 'Vocês não responderam a tempo: conta como a pior opção.');
+        ? [el('div', { class: 'label-sm' }, 'Você escolheu'), el('p', { style: 'margin:0' }, opt.label)]
+        : el('p', { class: 'muted' }, 'Você não respondeu a tempo: conta como a pior opção.');
     }
 
     function renderClosed() {
@@ -769,7 +769,7 @@
           roundMeta(),
           el('div', { class: 'big-emoji' }, '⏱️'),
           el('h2', {}, 'Respostas encerradas'),
-          el('p', { class: 'muted', style: 'margin:0' }, 'Olhem para o telão. A revelação vem aí.')
+          el('p', { class: 'muted', style: 'margin:0' }, 'Olhe para o telão. A revelação vem aí.')
         ),
         el('div', { class: 'card' }, chosenLine()),
       ];
@@ -784,7 +784,7 @@
           el('h2', {}, view.twist.title),
           el('p', { style: 'margin:0' }, view.twist.narration)
         ),
-        el('div', { class: 'card' }, chosenLine(), el('p', { class: 'muted', style: 'margin-bottom:0' }, 'O que aconteceu com a escolha de vocês? Olhem o telão…')),
+        el('div', { class: 'card' }, chosenLine(), el('p', { class: 'muted', style: 'margin-bottom:0' }, 'O que aconteceu com a sua escolha? Olhe o telão…')),
       ];
     }
 
@@ -797,7 +797,7 @@
             'div',
             { class: 'card' },
             roundMeta(),
-            el('p', {}, 'Vocês entraram depois do fim desta rodada.'),
+            el('p', {}, 'Você entrou depois do fim desta rodada.'),
             el('div', { class: 'label-sm' }, 'Melhor opção'),
             el('p', { style: 'margin:0' }, view.reveal.bestLabel)
           )
@@ -884,13 +884,13 @@
           el('div', { class: 'final-tier' }, f.tier.name),
           el('p', { style: 'margin:0 0 12px' }, f.tier.message),
           el('div', { class: 'final-val' }, fmtBRL(view.team.valuation)),
-          el('p', { class: 'muted' }, `${ordinal(f.position)} lugar de ${f.teamCount} times`)
+          el('p', { class: 'muted' }, `${ordinal(f.position)} lugar de ${f.teamCount} jogadores`)
         ),
         el(
           'div',
           { class: 'card center' },
           won
-            ? el('h2', { style: 'margin:0' }, '🏆 Vocês venceram!')
+            ? el('h2', { style: 'margin:0' }, '🏆 Você venceu!')
             : el('p', { style: 'margin:0' }, '🏆 Vencedor: ', el('b', {}, f.winnerName)),
           f.tieBreak ? el('p', { class: 'muted', style: 'margin:10px 0 0;font-size:14px' }, window.Bora.tieText(f.tieBreak)) : null
         ),

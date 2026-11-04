@@ -24,7 +24,7 @@ const ROUNDS = [
     scenario:
       'A Bora.ai vai guardar eventos, lotes, ingressos e compradores. Dois fãs não podem levar o último ' +
       'ingresso do lote ao mesmo tempo, e o financeiro quer relatórios como "quantos ingressos do lote 2 ' +
-      'do show X foram vendidos para compradores de SP?". Onde vocês guardam esses dados?',
+      'do show X foram vendidos para compradores de SP?". Onde você guarda esses dados?',
     options: [
       {
         id: 'rds',
@@ -61,7 +61,7 @@ const ROUNDS = [
       'Os primeiros eventos estão no ar. Cada um tem cartaz e fotos, e cada compra gera um PDF do ingresso.',
     scenario:
       'Cada evento tem cartaz e fotos do line-up, e cada compra gera um PDF do ingresso. Esses arquivos só ' +
-      'crescem, e no mês que vem a Bora.ai vai rodar em mais de um servidor. Onde vocês guardam os arquivos?',
+      'crescem, e no mês que vem a Bora.ai vai rodar em mais de um servidor. Onde você guarda os arquivos?',
     options: [
       {
         id: 's3',
@@ -96,7 +96,7 @@ const ROUNDS = [
     narration: 'Chegou a primeira fatura da AWS. Ninguém no time esperava aquele número.',
     scenario:
       'A fatura veio com R$ 5.000 a mais: um ambiente de testes ficou ligado o mês inteiro e ninguém lembrou ' +
-      'de desligar. A fatura só chega depois que o mês acaba. O que vocês fazem para isso não se repetir?',
+      'de desligar. A fatura só chega depois que o mês acaba. O que você faz para isso não se repetir?',
     options: [
       {
         id: 'budgets',
@@ -133,7 +133,7 @@ const ROUNDS = [
     scenario:
       'Fãs no Japão reclamam que a página do evento demora para abrir. A página tem fotos grandes, vídeo e ' +
       'line-up, iguais para todo mundo. Os servidores ficam na Região de São Paulo e estão usando só 15% de ' +
-      'CPU. O que vocês fazem?',
+      'CPU. O que você faz?',
     options: [
       {
         id: 'cloudfront',
@@ -169,7 +169,7 @@ const ROUNDS = [
       'Os fãs pediram: querem receber o ingresso com QR code no e-mail logo depois da compra.',
     scenario:
       'O envio do QR code por e-mail passa dias quase sem uso. Quando abre a venda de um show grande, chegam ' +
-      'milhares de pedidos em poucos minutos. Como vocês rodam esse envio?',
+      'milhares de pedidos em poucos minutos. Como você roda esse envio?',
     options: [
       {
         id: 'lambda',
@@ -183,7 +183,7 @@ const ROUNDS = [
         tier: 'mid',
         label: 'Uma instância EC2 grande, só para isso, ligada o tempo todo',
         feedback:
-          'Aguenta o pico, mas vocês pagam uma máquina grande 24 horas por dia para ficar parada quase sempre.',
+          'Aguenta o pico, mas você paga uma máquina grande 24 horas por dia para ficar parada quase sempre.',
       },
       {
         id: 'ec2pequena',
@@ -248,7 +248,7 @@ const ROUNDS = [
     scenario:
       'A página de espera do festival tem line-up, mapa e perguntas frequentes. São esperadas 100 mil visitas ' +
       'no dia do anúncio. Ninguém faz login e o conteúdo só muda quando o marketing envia um arquivo novo. ' +
-      'Como vocês publicam essa página?',
+      'Como você publica essa página?',
     options: [
       {
         id: 'estatico',
@@ -262,14 +262,14 @@ const ROUNDS = [
         tier: 'mid',
         label: 'Uma instância EC2 servindo as páginas, com o CloudFront na frente',
         feedback:
-          'O cache segura o tráfego, mas vocês pagam e mantêm um servidor 24 horas por dia para entregar arquivos que não mudam.',
+          'O cache segura o tráfego, mas você paga e mantém um servidor 24 horas por dia para entregar arquivos que não mudam.',
       },
       {
         id: 'pesada',
         tier: 'worst',
         label: 'Load Balancer + instâncias EC2 com Auto Scaling + banco Aurora',
         feedback:
-          'Aguentaria, mas é a arquitetura de uma aplicação completa para uma página sem login e sem dados. Vocês pagam caro por peças paradas.',
+          'Aguentaria, mas é a arquitetura de uma aplicação completa para uma página sem login e sem dados. Você paga caro por peças paradas.',
       },
     ],
     explanation:
@@ -286,7 +286,7 @@ const ROUNDS = [
     scenario:
       'Agora a página precisa vender: login, escolha do lote, pagamento e baixa do estoque de ingressos no ' +
       'banco. Na abertura, o tráfego vai ser 10 vezes maior que o normal, e cada página de compra carrega o ' +
-      'mapa e as fotos do festival. Qual arquitetura vocês usam?',
+      'mapa e as fotos do festival. Qual arquitetura você usa?',
     options: [
       {
         id: 'completa',
@@ -321,7 +321,7 @@ const ROUNDS = [
     difficulty: 'dificil',
     bet: true,
     narration:
-      'Última decisão. Antes de ver a pergunta, cada time aposta uma parte do valuation. Acertou, a aposta dobra. Errou, perde.',
+      'Última decisão. Antes de ver a pergunta, cada um aposta uma parte do valuation. Acertou, a aposta dobra. Errou, perde.',
     scenario:
       'O jurídico avisou: CPF e dados pessoais dos compradores precisam ficar armazenados no Brasil. E a venda ' +
       'não pode parar se uma AZ inteira cair. Onde fica o banco de dados dos compradores?',

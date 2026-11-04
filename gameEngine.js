@@ -94,7 +94,7 @@ class Game {
         this.state.teams[t.id] = this._newTeam(t.id, t.name, t.token, t.joinedAt, t.deviceId);
       }
     }
-    this._log(keepTeams ? 'Jogo reiniciado (times mantidos).' : 'Jogo reiniciado do zero.');
+    this._log(keepTeams ? 'Jogo reiniciado (jogadores mantidos).' : 'Jogo reiniciado do zero.');
   }
 
   // --- Times ---------------------------------------------------------------
@@ -133,7 +133,7 @@ class Game {
     if (back) {
       delete back.rejoinOpen;
       if (device) back.deviceId = device;
-      this._log(`Time "${back.name}" voltou em outro celular.`);
+      this._log(`"${back.name}" voltou em outro celular.`);
       return back;
     }
 
@@ -151,7 +151,7 @@ class Game {
     const rs = this._rs();
     if (rs && !rs.orders[id]) rs.orders[id] = this._shuffledIds(this.currentRound);
 
-    this._log(`Time "${name}" entrou.`);
+    this._log(`"${name}" entrou.`);
     return team;
   }
 
@@ -176,7 +176,7 @@ class Game {
       delete rs.results[id];
       if (rs.participants) rs.participants = rs.participants.filter((p) => p !== id);
     }
-    this._log(`Time "${team.name}" removido pelo operador.`);
+    this._log(`"${team.name}" removido pelo operador.`);
   }
 
   // Libera (ou cancela) a próxima entrada com o nome deste time.
@@ -192,7 +192,7 @@ class Game {
     const team = this.state.teams[id];
     if (!team) throw new GameError('unknown_team');
     const name = this._validateName(rawName, id);
-    this._log(`Time "${team.name}" renomeado para "${name}".`);
+    this._log(`"${team.name}" renomeado para "${name}".`);
     team.name = name;
   }
 
@@ -397,7 +397,7 @@ class Game {
     this._log(`Rodada ${rs.index + 1} revelada. Melhor opção: ${best.label}.`);
     if (rs.event) {
       const sign = rs.event.pct > 0 ? '+' : '';
-      this._log(`Evento: ${rs.event.label} "${rs.event.teamName}" (${sign}${Math.round(rs.event.pct * 100)}%).`);
+      this._log(`Evento para "${rs.event.teamName}": ${rs.event.label} (${sign}${Math.round(rs.event.pct * 100)}%).`);
     }
   }
 
@@ -449,7 +449,7 @@ class Game {
     else if (this.state.phase === PHASE.QUESTION) field = 'deadline';
     if (!field || rs[field] >= until) return false;
     rs[field] = until;
-    this._log(`Servidor reiniciou com a rodada aberta: mais ${Math.round(minMs / 1000)} s para os times reconectarem.`);
+    this._log(`Servidor reiniciou com a rodada aberta: mais ${Math.round(minMs / 1000)} s para os jogadores reconectarem.`);
     return true;
   }
 

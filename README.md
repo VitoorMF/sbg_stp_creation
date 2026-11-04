@@ -1,6 +1,6 @@
 # Startup Creation
 
-Jogo de 9 rodadas em que times decidem a arquitetura da Bora.ai (venda de ingressos para shows e festivais). Cada escolha multiplica o valuation do time, e o maior valuation no final ganha. Cada time joga com um celular, no estilo Kahoot.
+Jogo individual de 9 rodadas: cada pessoa é CEO da Bora.ai (venda de ingressos para shows e festivais) e decide a arquitetura no próprio celular, no estilo Kahoot. Cada escolha multiplica o valuation da startup, e o maior valuation no final ganha. Até 60 jogadores (`MAX_TEAMS`). No código, cada jogador ainda se chama "time" (`team`).
 
 ## Rodar
 
@@ -13,7 +13,7 @@ O servidor sobe na porta **3002** (`PORT=3003 npm start` para trocar) e imprime 
 
 | Tela | Endereço | Quem usa |
 | --- | --- | --- |
-| Time | `http://<ip>:3002/` | um celular por time, aberto pelo QR code |
+| Jogador | `http://<ip>:3002/` | o celular de cada pessoa, aberto pelo QR code |
 | Telão | `http://<ip>:3002/telao` | projetor (tecla **F** para tela cheia) |
 | Operador | `http://<ip>:3002/admin` | quem controla o jogo. **Não projete esta tela**: ela mostra as respostas |
 

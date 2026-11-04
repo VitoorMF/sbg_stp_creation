@@ -38,12 +38,12 @@ module.exports = {
   // Um evento por rodada (exceto na aposta), sorteado para um time.
   EVENTS_ENABLED: true,
   EVENTS: [
-    { id: 'anjo', label: 'Um investidor anjo apostou no time', pct: 0.1 },
-    { id: 'viral', label: 'Um post do time viralizou', pct: 0.08 },
-    { id: 'reportagem', label: 'Uma reportagem elogiou o time', pct: 0.05 },
-    { id: 'bug', label: 'Bug em produção no time', pct: -0.1 },
-    { id: 'cancelou', label: 'Um cliente grande cancelou com o time', pct: -0.08 },
-    { id: 'concorrente', label: 'Um concorrente copiou o produto do time', pct: -0.05 },
+    { id: 'anjo', label: 'Um investidor anjo apostou na startup', pct: 0.1 },
+    { id: 'viral', label: 'Um post da startup viralizou', pct: 0.08 },
+    { id: 'reportagem', label: 'Uma reportagem elogiou a startup', pct: 0.05 },
+    { id: 'bug', label: 'Bug em produção', pct: -0.1 },
+    { id: 'cancelou', label: 'Um cliente grande cancelou o contrato', pct: -0.08 },
+    { id: 'concorrente', label: 'Um concorrente copiou o produto', pct: -0.05 },
   ],
 
   // Ranking some do projetor a partir desta rodada até o resultado final.
@@ -53,7 +53,7 @@ module.exports = {
   TIERS: [
     { min: 5000000, name: 'Unicórnio', emoji: '🦄', message: 'O CTO dorme tranquilo.' },
     { min: 1500000, name: 'Série A', emoji: '🚀', message: 'Boa arquitetura, boa escala.' },
-    { min: 300000, name: 'Rodada Seed', emoji: '🌱', message: 'Investidores apostaram em vocês.' },
+    { min: 300000, name: 'Rodada Seed', emoji: '🌱', message: 'Investidores apostaram em você.' },
     { min: 50000, name: 'Sobreviveu', emoji: '🛟', message: 'Bootstrapped: vivo, mas sem grandes saltos.' },
     { min: 0, name: 'Faliu', emoji: '💀', message: 'Faltou arquitetura ou alerta de custo. A startup foi junto.' },
   ],
@@ -66,6 +66,6 @@ module.exports = {
   // Texto do prêmio no telão final. Ajustar quando os AWS Credits forem confirmados.
   PRIZE_TEXT: 'Ganhou os AWS Credits!',
 
-  MAX_TEAMS: 60,
+  MAX_TEAMS: 60, // jogo individual: até ~30 pessoas, com folga
   MAX_NAME_LENGTH: 24,
 };
